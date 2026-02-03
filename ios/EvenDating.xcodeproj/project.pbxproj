@@ -7,29 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0E878D840DDF3B159F512E0E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 5A4EC85C07DD4E676B1DC5B3 /* PrivacyInfo.xcprivacy */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		4F381C93EB04412217259850 /* Pods_EvenDating.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0392058B5739E5A85722B072 /* Pods_EvenDating.framework */; };
-		7A729EB6CC80271AC2B8B860 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DB237FA77FE4F216099541AA /* PrivacyInfo.xcprivacy */; };
-		91DAF9E02E1BDDA3D214DE81 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC4CFA279414E074CB62952 /* ExpoModulesProvider.swift */; };
+		3EF47FF1E49E41C2896D105E /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E174313DA4698569F1F4CBAA /* ExpoModulesProvider.swift */; };
+		7154D41175A29ECA9CFDF979 /* Pods_EvenDating.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2BA527F5FE772E1531B6838D /* Pods_EvenDating.framework */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0392058B5739E5A85722B072 /* Pods_EvenDating.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_EvenDating.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07F961A680F5B00A75B9A /* EvenDating.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EvenDating.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = EvenDating/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = EvenDating/Info.plist; sourceTree = "<group>"; };
-		5570EF38AE97B53833A90C88 /* Pods-EvenDating.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EvenDating.debug.xcconfig"; path = "Target Support Files/Pods-EvenDating/Pods-EvenDating.debug.xcconfig"; sourceTree = "<group>"; };
-		5EC4CFA279414E074CB62952 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-EvenDating/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		2BA527F5FE772E1531B6838D /* Pods_EvenDating.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_EvenDating.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		5A4EC85C07DD4E676B1DC5B3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = EvenDating/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = EvenDating/SplashScreen.storyboard; sourceTree = "<group>"; };
-		AD078866523A8179B17BF80F /* Pods-EvenDating.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EvenDating.release.xcconfig"; path = "Target Support Files/Pods-EvenDating/Pods-EvenDating.release.xcconfig"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		DB237FA77FE4F216099541AA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = EvenDating/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E174313DA4698569F1F4CBAA /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-EvenDating/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		E9EFA7FF600F6FB79C461369 /* Pods-EvenDating.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EvenDating.debug.xcconfig"; path = "Target Support Files/Pods-EvenDating/Pods-EvenDating.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = EvenDating/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* EvenDating-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "EvenDating-Bridging-Header.h"; path = "EvenDating/EvenDating-Bridging-Header.h"; sourceTree = "<group>"; };
+		F220DBD22C3243C7D7FA85A2 /* Pods-EvenDating.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EvenDating.release.xcconfig"; path = "Target Support Files/Pods-EvenDating/Pods-EvenDating.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4F381C93EB04412217259850 /* Pods_EvenDating.framework in Frameworks */,
+				7154D41175A29ECA9CFDF979 /* Pods_EvenDating.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,24 +53,16 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				DB237FA77FE4F216099541AA /* PrivacyInfo.xcprivacy */,
+				5A4EC85C07DD4E676B1DC5B3 /* PrivacyInfo.xcprivacy */,
 			);
 			name = EvenDating;
-			sourceTree = "<group>";
-		};
-		22EA577BA51C1A87F42340AD /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				BF6AA5553011DD043666B29B /* EvenDating */,
-			);
-			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				0392058B5739E5A85722B072 /* Pods_EvenDating.framework */,
+				2BA527F5FE772E1531B6838D /* Pods_EvenDating.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -82,6 +74,14 @@
 			name = Libraries;
 			sourceTree = "<group>";
 		};
+		83C97E8AFCBD43B9CE01CC39 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				C381EC5ACFFE7D97F22B52F8 /* EvenDating */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
@@ -89,8 +89,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				9E63ACB8470CF5A8DE9D58FC /* Pods */,
-				22EA577BA51C1A87F42340AD /* ExpoModulesProviders */,
+				99942E35A8055463A608E954 /* Pods */,
+				83C97E8AFCBD43B9CE01CC39 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -105,11 +105,11 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		9E63ACB8470CF5A8DE9D58FC /* Pods */ = {
+		99942E35A8055463A608E954 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				5570EF38AE97B53833A90C88 /* Pods-EvenDating.debug.xcconfig */,
-				AD078866523A8179B17BF80F /* Pods-EvenDating.release.xcconfig */,
+				E9EFA7FF600F6FB79C461369 /* Pods-EvenDating.debug.xcconfig */,
+				F220DBD22C3243C7D7FA85A2 /* Pods-EvenDating.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -123,10 +123,10 @@
 			path = EvenDating/Supporting;
 			sourceTree = "<group>";
 		};
-		BF6AA5553011DD043666B29B /* EvenDating */ = {
+		C381EC5ACFFE7D97F22B52F8 /* EvenDating */ = {
 			isa = PBXGroup;
 			children = (
-				5EC4CFA279414E074CB62952 /* ExpoModulesProvider.swift */,
+				E174313DA4698569F1F4CBAA /* ExpoModulesProvider.swift */,
 			);
 			name = EvenDating;
 			sourceTree = "<group>";
@@ -139,13 +139,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "EvenDating" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				82BA96D4E2178BC19CF214F3 /* [Expo] Configure project */,
+				3B751F36B90DB117FC330605 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				26DD0906E9286C5858334452 /* [CP] Embed Pods Frameworks */,
+				93C9186EBA645B3B8D4E9605 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -195,7 +195,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				7A729EB6CC80271AC2B8B860 /* PrivacyInfo.xcprivacy in Resources */,
+				0E878D840DDF3B159F512E0E /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -241,27 +241,29 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		26DD0906E9286C5858334452 /* [CP] Embed Pods Frameworks */ = {
+		3B751F36B90DB117FC330605 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-EvenDating/Pods-EvenDating-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			inputFileListPaths = (
 			);
-			name = "[CP] Embed Pods Frameworks";
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env",
+				"$(SRCROOT)/.xcode.env.local",
+				"$(SRCROOT)/EvenDating/EvenDating.entitlements",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-EvenDating/expo-configure-project.sh",
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-EvenDating/ExpoModulesProvider.swift",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-EvenDating/Pods-EvenDating-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-EvenDating/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -305,29 +307,27 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-EvenDating/Pods-EvenDating-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		82BA96D4E2178BC19CF214F3 /* [Expo] Configure project */ = {
+		93C9186EBA645B3B8D4E9605 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
-				"$(SRCROOT)/.xcode.env",
-				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/EvenDating/EvenDating.entitlements",
-				"$(SRCROOT)/Pods/Target Support Files/Pods-EvenDating/expo-configure-project.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-EvenDating/Pods-EvenDating-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
 			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
+			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
-				"$(SRCROOT)/Pods/Target Support Files/Pods-EvenDating/ExpoModulesProvider.swift",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-EvenDating/expo-configure-project.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-EvenDating/Pods-EvenDating-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -337,7 +337,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				91DAF9E02E1BDDA3D214DE81 /* ExpoModulesProvider.swift in Sources */,
+				3EF47FF1E49E41C2896D105E /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -346,13 +346,13 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5570EF38AE97B53833A90C88 /* Pods-EvenDating.debug.xcconfig */;
+			baseConfigurationReference = E9EFA7FF600F6FB79C461369 /* Pods-EvenDating.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = EvenDating/EvenDating.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = P3V93LNT56;
+				DEVELOPMENT_TEAM = 229ZWK96F4;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -383,13 +383,13 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AD078866523A8179B17BF80F /* Pods-EvenDating.release.xcconfig */;
+			baseConfigurationReference = F220DBD22C3243C7D7FA85A2 /* Pods-EvenDating.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = EvenDating/EvenDating.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = P3V93LNT56;
+				DEVELOPMENT_TEAM = 229ZWK96F4;
 				INFOPLIST_FILE = EvenDating/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -32,7 +32,7 @@
         ],
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "us.evendating.dev",
+      "bundleIdentifier": "us.evendating.app",
       "buildNumber": "2"
     },
     "android": {
