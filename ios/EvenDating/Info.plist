@@ -30,6 +30,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>evenapp</string>
+          <string>even</string>
           <string>us.evendating.app</string>
         </array>
       </dict>

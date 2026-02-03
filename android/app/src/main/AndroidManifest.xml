@@ -28,6 +28,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="evenapp"/>
+        <data android:scheme="even"/>
         <data android:scheme="exp+evenapp"/>
       </intent-filter>
     </activity>
