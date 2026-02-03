@@ -37,7 +37,7 @@ type StoredTokens = {
 
 // Get socket URL from environment or derive from API base URL
 // Matches the same base URL pattern used in apiService.ts
-const getSocketUrl = (): string => {
+const getSocketUrl = (): string | null => {
   // Check for explicit WebSocket URL in environment
   if (process.env.EXPO_PUBLIC_SOCKET_URL) {
     return process.env.EXPO_PUBLIC_SOCKET_URL;
@@ -45,10 +45,14 @@ const getSocketUrl = (): string => {
 
   // Derive from API base URL (matches apiService.ts BASE_URL pattern)
   const apiBase = process.env.EXPO_PUBLIC_API_BASE_URL;
-  
+  if (!apiBase) {
+    // Return null - App.tsx will throw a proper error for missing env var
+    return null;
+  }
+
   // Extract hostname (remove https:// and /api if present)
   const hostname = apiBase.replace(/^https?:\/\//, "").replace(/\/api$/, "");
-  
+
   // Use wss for https, ws for http
   const protocol = apiBase.startsWith("https") ? "wss" : "ws";
   return `${protocol}://${hostname}`;
@@ -132,6 +136,11 @@ async function getFreshToken(token?: string | null): Promise<string | null> {
 //*******************************************************************
 export async function initSocket(token?: string | null): Promise<Socket | null> {
   if (socket) return socket;
+
+  if (!SOCKET_URL) {
+    // Missing environment configuration - App.tsx will throw a proper error
+    return null;
+  }
 
   const freshToken = await getFreshToken(token);
   if (!freshToken) {
