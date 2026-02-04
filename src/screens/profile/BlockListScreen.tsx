@@ -103,9 +103,9 @@ export default function BlockListScreen() {
       {loading ? (
         <ActivityIndicator color={colors.accent} style={{ marginTop: 20 }} />
       ) : error ? (
-        <Text style={{ color: colors.text }}>{error}</Text>
+        <Text style={{ color: colors.text, textAlign: "center" }}>{error}</Text>
       ) : blocked.length === 0 ? (
-        <Text style={{ color: colors.subtitle }}>You haven't blocked anyone.</Text>
+        <Text style={{ color: colors.subtitle, textAlign: "center" }}>You haven't blocked anyone.</Text>
       ) : (
         <FlatList
           data={blocked}
