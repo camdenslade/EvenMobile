@@ -441,13 +441,15 @@ export default function ProfileScreen({
 
         {activeTab === "getperks" && (
           <View style={styles.section}>
-            <View style={[styles.heroCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.heroTitle, { color: colors.text }]}>
-                Odd Membership
-              </Text>
-              <Text style={[styles.heroSubtitle, { color: colors.subtitle }]}>
-                {userSummary?.isSubscribed ? "Premium account." : "Standard account."}
-              </Text>
+            <View style={[styles.membershipCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.membershipInfo}>
+                <Text style={[styles.membershipTitle, { color: colors.text }]}>
+                  Membership
+                </Text>
+                <Text style={[styles.membershipStatus, { color: colors.subtitle }]}>
+                  {userSummary?.isSubscribed ? "Premium" : "Standard"}
+                </Text>
+              </View>
               {!userSummary?.isSubscribed && (
                 <TouchableOpacity
                   style={[styles.subscribeBtn, { backgroundColor: colors.accent }]}
@@ -461,7 +463,7 @@ export default function ProfileScreen({
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Text style={[styles.subscribeText, { color: colors.buttonText }]}>
-                    Subscribe
+                    Upgrade
                   </Text>
                 </TouchableOpacity>
               )}
@@ -905,23 +907,25 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  heroCard: {
-    padding: 26,
-    borderRadius: 18,
-    marginBottom: 24,
+  membershipCard: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
     borderWidth: 1,
   },
-  heroTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    textAlign: "center",
+  membershipInfo: {
+    flex: 1,
   },
-  heroSubtitle: {
-    fontSize: 16,
-    marginTop: 6,
-    marginBottom: 20,
-    textAlign: "center",
+  membershipTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  membershipStatus: {
+    fontSize: 14,
+    marginTop: 4,
   },
 
   searchBtn: {
