@@ -1163,9 +1163,9 @@ export default function EditProfileScreen({
   // MAIN UI
   // ----------------------------------------------------------------------
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
       <GlobalBackground />
-      
+
       <ImageCropModal
         visible={cropModalVisible}
         imageUri={imageToCrop || ""}
@@ -1173,78 +1173,69 @@ export default function EditProfileScreen({
         onCancel={handleCropCancel}
       />
 
-      <ScrollView 
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={handleBackPress}
+        accessible={true}
+        accessibilityLabel="Go back"
+        accessibilityRole="button"
+        accessibilityHint="Returns to previous screen"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons
+          name="chevron-back"
+          size={30}
+          color={colors.text}
+          accessible={false}
+          importantForAccessibility="no"
+        />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.previewBtn, { backgroundColor: colors.card, borderColor: colors.subtitle }]}
+        onPress={() => {
+          const previewData = {
+            name,
+            age,
+            bio,
+            interests,
+            photos: photos.filter((p): p is string => p !== null),
+            datingPreference,
+            userUid: userUid || undefined,
+          };
+          navigation.navigate("UserProfileView", {
+            userId: userUid || "",
+            previewData,
+          });
+        }}
+        accessible={true}
+        accessibilityLabel="Preview profile"
+        accessibilityRole="button"
+        accessibilityHint="Opens preview of your profile"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Text
+          style={[styles.previewBtnText, { color: colors.text }]}
+          allowFontScaling={true}
+        >
+          Preview
+        </Text>
+      </TouchableOpacity>
+
+      <Text
+        style={[styles.title, { color: colors.text }]}
+        accessible={true}
+        accessibilityRole="header"
+        allowFontScaling={true}
+      >
+        Edit Profile
+      </Text>
+
+      <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
         scrollEnabled={draggingIndex === null}
       >
-        {/* BACK BUTTON */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBackPress}
-          accessible={true}
-          accessibilityLabel="Go back"
-          accessibilityRole="button"
-          accessibilityHint="Returns to previous screen"
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons
-            name="chevron-back"
-            size={30}
-            color={colors.text}
-            accessible={false}
-            importantForAccessibility="no"
-          />
-        </TouchableOpacity>
-
-        <View 
-          style={styles.headerRow}
-          accessible={false}
-          importantForAccessibility="no"
-        >
-          <Text 
-            style={[styles.headerText, { color: colors.text }]}
-            accessible={true}
-            accessibilityRole="header"
-            allowFontScaling={true}
-          >
-            Edit Profile
-          </Text>
-          <TouchableOpacity
-            style={[styles.previewBtn, { backgroundColor: colors.card, borderColor: colors.subtitle }]}
-            onPress={() => {
-              // Pass preview data with current unsaved state
-              const previewData = {
-                name,
-                age,
-                bio,
-                interests,
-                photos: photos.filter((p): p is string => p !== null),
-                datingPreference,
-                userUid: userUid || undefined,
-              };
-              navigation.navigate("UserProfileView", { 
-                previewData,
-                userId: userUid || undefined,
-              });
-            }}
-            accessible={true}
-            accessibilityLabel="Preview profile"
-            accessibilityRole="button"
-            accessibilityHint="Opens preview of how your profile appears to others"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Text 
-              style={[styles.previewBtnText, { color: colors.text }]}
-              allowFontScaling={true}
-              accessible={false}
-              importantForAccessibility="no"
-            >
-              Preview
-            </Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Drag overlay - freezes screen while dragging */}
         {draggingIndex !== null && (
           <View 
@@ -2054,8 +2045,13 @@ export default function EditProfileScreen({
 // ---------------------------------------------------------------------------
 //
 const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+  },
+
   container: {
-    padding: 20,
     paddingBottom: 200,
   },
 
@@ -2069,32 +2065,23 @@ const styles = StyleSheet.create({
 
   backButton: {
     position: "absolute",
-    top: 45,
+    top: 50,
     left: 20,
-    zIndex: 20,
-    minWidth: Platform.OS === 'ios' ? 44 : 48,
-    minHeight: Platform.OS === 'ios' ? 44 : 48,
-    justifyContent: "center",
-    alignItems: "center",
+    zIndex: 10,
   },
 
-  backArrow: {
-    fontSize: 34,
-    fontWeight: "700",
+  title: {
+    fontSize: 36,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
   },
 
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 90,
-    marginBottom: 24,
-  },
-  headerText: {
-    fontSize: 34,
-    fontWeight: "800",
-  },
   previewBtn: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 10,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,

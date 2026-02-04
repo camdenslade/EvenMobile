@@ -699,6 +699,33 @@ export default function SettingsScreen({
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <GlobalBackground />
 
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+        accessible={true}
+        accessibilityLabel="Go back"
+        accessibilityRole="button"
+        accessibilityHint="Returns to previous screen"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons
+          name="chevron-back"
+          size={30}
+          color={colors.text}
+          accessible={false}
+          importantForAccessibility="no"
+        />
+      </TouchableOpacity>
+
+      <Text
+        style={[styles.title, { color: colors.text }]}
+        accessible={true}
+        accessibilityRole="header"
+        allowFontScaling={true}
+      >
+        Settings
+      </Text>
+
       <ScrollView
         ref={scrollViewRef}
         contentContainerStyle={{ paddingBottom: 140 }}
@@ -724,37 +751,6 @@ export default function SettingsScreen({
             </TouchableOpacity>
           </View>
         )}
-        {/* HEADER */}
-        <View 
-          style={styles.headerRow}
-          accessible={false}
-          importantForAccessibility="no"
-        >
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()}
-            accessible={true}
-            accessibilityLabel="Go back"
-            accessibilityRole="button"
-            accessibilityHint="Returns to previous screen"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={30}
-              color={colors.text}
-              accessible={false}
-              importantForAccessibility="no"
-            />
-          </TouchableOpacity>
-          <Text 
-            style={[styles.headerText, { color: colors.text }]}
-            accessible={true}
-            accessibilityRole="header"
-            allowFontScaling={true}
-          >
-            Settings
-          </Text>
-        </View>
 
         {/* THEME TOGGLE */}
         <Text 
@@ -2236,7 +2232,11 @@ export default function SettingsScreen({
 // STYLES
 // ---------------------------------------------------------------------------
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+  },
 
   // Loading
   loadingWrap: {
@@ -2247,14 +2247,18 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: 10 },
 
   // Header
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 25,
-    marginTop: 40,
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
   },
-  backArrow: { fontSize: 32, marginRight: 10 },
-  headerText: { fontSize: 32, fontWeight: "700" },
+  title: {
+    fontSize: 36,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
+  },
 
   // Sections
   sectionTitle: {
