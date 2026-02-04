@@ -444,7 +444,7 @@ export default function ProfileScreen({
             <View style={[styles.membershipCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.membershipInfo}>
                 <Text style={[styles.membershipTitle, { color: colors.text }]}>
-                  Membership
+                  Odd Membership
                 </Text>
                 <Text style={[styles.membershipStatus, { color: colors.subtitle }]}>
                   {userSummary?.isSubscribed ? "Premium" : "Standard"}
@@ -911,21 +911,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
+    padding: 20,
+    borderRadius: 14,
+    marginBottom: 20,
     borderWidth: 1,
   },
   membershipInfo: {
     flex: 1,
   },
   membershipTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "700",
   },
   membershipStatus: {
-    fontSize: 14,
-    marginTop: 4,
+    fontSize: 15,
+    marginTop: 6,
   },
 
   searchBtn: {
