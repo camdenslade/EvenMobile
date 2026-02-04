@@ -252,51 +252,48 @@ export default function ReviewDetailScreen({
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.scrollWrap}
-      showsVerticalScrollIndicator={false}
-      accessible={false}
-      importantForAccessibility="no"
-    >
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <GlobalBackground />
 
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={[styles.backButton, { borderColor: colors.border }]}
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+        accessible={true}
+        accessibilityLabel="Go back"
+        accessibilityRole="button"
+        accessibilityHint="Returns to previous screen"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons
+          name="chevron-back"
+          size={30}
+          color={colors.text}
+          accessible={false}
+          importantForAccessibility="no"
+        />
+      </TouchableOpacity>
+
+      <View style={styles.titleRow}>
+        <Text
+          style={[styles.title, { color: colors.text }]}
           accessible={true}
-          accessibilityLabel="Go back"
-          accessibilityRole="button"
-          accessibilityHint="Returns to previous screen"
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="header"
+          allowFontScaling={true}
         >
-          <Ionicons
-            name="chevron-back"
-            size={26}
-            color={colors.text}
-            accessible={false}
-            importantForAccessibility="no"
-          />
-        </TouchableOpacity>
-
-        <View style={{ flex: 1 }} accessible={false} importantForAccessibility="no">
-          <Text
-            style={[styles.headerTitle, { color: colors.text }]}
-            accessible={true}
-            accessibilityRole="header"
-            allowFontScaling={true}
-          >
-            {counterpartName}
-          </Text>
-        </View>
-
+          {counterpartName}
+        </Text>
         {loading && (
           <ActivityIndicator size="small" color={colors.subtitle} style={styles.inlineSpinner} />
         )}
       </View>
 
-      {error && receivedReview && (
+      <ScrollView
+        contentContainerStyle={styles.scrollWrap}
+        showsVerticalScrollIndicator={false}
+        accessible={false}
+        importantForAccessibility="no"
+      >
+        {error && receivedReview && (
         <View style={[styles.errorBanner, { borderColor: colors.accent }]}>
           <Text style={[styles.errorText, { color: colors.text }]}>{error}</Text>
           <TouchableOpacity
@@ -472,16 +469,18 @@ export default function ReviewDetailScreen({
           </TouchableOpacity>
         )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
   },
   scrollWrap: {
-    paddingHorizontal: 20,
     paddingBottom: 60,
   },
 
@@ -504,23 +503,22 @@ const styles = StyleSheet.create({
   },
   retryText: { fontWeight: "700" },
 
-  topBar: {
-    paddingTop: 70,
-    paddingBottom: 24,
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
+  },
+  titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "center",
+    marginBottom: 20,
   },
-  backButton: {
-    padding: 6,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  headerSubtitle: {
-    marginTop: 4,
-    fontSize: 14,
+  title: {
+    fontSize: 36,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   inlineSpinner: {
     marginLeft: 8,

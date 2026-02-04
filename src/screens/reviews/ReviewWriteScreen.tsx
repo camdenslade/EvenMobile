@@ -369,42 +369,52 @@ export default function ReviewWriteScreen({ navigation, route }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <GlobalBackground />
-      
-      <View style={styles.header}>
+
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        accessibilityHint="Returns to previous screen"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons
+          name="chevron-back"
+          size={30}
+          color={colors.text}
+          accessible={false}
+          importantForAccessibility="no"
+        />
+      </TouchableOpacity>
+
+      {targetProfile && (
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
+          onPress={() => navigation.navigate("UserProfileView", {
+            userId: targetId,
+            targetName: targetProfile.name,
+            fromReview: true,
+          })}
+          style={styles.profilePreviewBtn}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={`View ${targetProfile.name}'s profile`}
+          accessibilityHint="Opens full profile view"
         >
-          <Ionicons
-            name="chevron-back"
-            size={30}
-            color={colors.text}
-            accessible={false}
-            importantForAccessibility="no"
+          <AppImage
+            source={targetProfile.photoUrl || "https://via.placeholder.com/100"}
+            style={styles.profilePreviewImage}
+            accessibilityLabel={`${targetProfile.name}'s photo`}
           />
         </TouchableOpacity>
-        {targetProfile && (
-          <TouchableOpacity
-            onPress={() => navigation.navigate("UserProfileView", {
-              userId: targetId,
-              targetName: targetProfile.name,
-              fromReview: true,
-            })}
-            style={styles.profilePreviewBtn}
-            accessibilityRole="button"
-            accessibilityLabel={`View ${targetProfile.name}'s profile`}
-            accessibilityHint="Opens full profile view"
-          >
-            <AppImage
-              source={targetProfile.photoUrl || "https://via.placeholder.com/100"}
-              style={styles.profilePreviewImage}
-              accessibilityLabel={`${targetProfile.name}'s photo`}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
+      )}
+
+      <Text
+        style={[styles.title, { color: colors.text }]}
+        accessible={true}
+        accessibilityRole="header"
+        allowFontScaling={true}
+      >
+        Write a Review
+      </Text>
 
       <ScrollView
         style={styles.scrollView}
@@ -413,14 +423,6 @@ export default function ReviewWriteScreen({ navigation, route }: Props) {
         accessible={false}
         importantForAccessibility="no"
       >
-        <Text 
-          style={[styles.title, { color: colors.text }]}
-          accessible={true}
-          accessibilityRole="header"
-        allowFontScaling={true}
-      >
-        Write a Review
-      </Text>
 
       <Text
         style={[styles.hint, { color: colors.subtitle, marginTop: 4 }]}
@@ -1002,16 +1004,20 @@ export default function ReviewWriteScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
     paddingTop: 60,
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
   },
   profilePreviewBtn: {
-    padding: 4,
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 10,
   },
   profilePreviewImage: {
     width: 40,
@@ -1019,19 +1025,14 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: "#333",
   },
-  backBtn: {
-    padding: 8,
-    marginRight: 8,
-  },
   scrollView: {
     flex: 1,
-    padding: 20,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    marginBottom: 30,
-    marginTop: 10,
+    fontSize: 36,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
   },
   label: {
     fontSize: 18,

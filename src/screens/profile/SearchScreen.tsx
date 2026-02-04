@@ -202,8 +202,8 @@ export default function SearchScreen({
         />
       </TouchableOpacity>
 
-      <Text 
-        style={[styles.header, { color: colors.text }]}
+      <Text
+        style={[styles.title, { color: colors.text }]}
         accessible={true}
         accessibilityRole="header"
         allowFontScaling={true}
@@ -352,23 +352,23 @@ export default function SearchScreen({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+  },
 
   backButton: {
     position: "absolute",
-    top: 45,
+    top: 50,
     left: 20,
     zIndex: 10,
-    minWidth: Platform.OS === 'ios' ? 44 : 48,
-    minHeight: Platform.OS === 'ios' ? 44 : 48,
-    justifyContent: "center",
-    alignItems: "center",
   },
 
-  header: {
-    fontSize: 28,
-    fontWeight: "700",
-    marginTop: 80,
+  title: {
+    fontSize: 36,
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 20,
   },
 

@@ -635,41 +635,40 @@ function validatePreferences(): string | null {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
       <GlobalBackground />
 
-      <ScrollView 
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={handleBackPress}
+        accessible={true}
+        accessibilityLabel="Go back"
+        accessibilityRole="button"
+        accessibilityHint="Returns to previous screen"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons
+          name="chevron-back"
+          size={30}
+          color={colors.text}
+          accessible={false}
+          importantForAccessibility="no"
+        />
+      </TouchableOpacity>
+
+      <Text
+        style={[styles.title, { color: colors.text }]}
+        accessible={true}
+        accessibilityRole="header"
+        allowFontScaling={true}
+      >
+        Preferences
+      </Text>
+
+      <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerRow}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBackPress}
-          accessible={true}
-          accessibilityLabel="Go back"
-          accessibilityRole="button"
-            accessibilityHint="Returns to previous screen"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={30}
-              color={colors.text}
-              accessible={false}
-              importantForAccessibility="no"
-            />
-          </TouchableOpacity>
-
-          <Text 
-            style={[styles.headerText, { color: colors.text }]}
-            accessible={true}
-            accessibilityRole="header"
-            allowFontScaling={true}
-          >
-            Preferences
-          </Text>
-        </View>
 
         {/* AGE RANGE - DUAL SLIDER */}
         <Text 
@@ -1046,8 +1045,13 @@ function validatePreferences(): string | null {
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+  },
+
   container: {
-    padding: 20,
     paddingBottom: 200,
   },
 
@@ -1059,22 +1063,18 @@ const styles = StyleSheet.create({
 
   loadingText: { marginTop: 10, fontSize: 16 },
 
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 20,
-    marginTop: 20,
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
   },
 
-  backButton: {
-    padding: 6,
-    borderRadius: 20,
-    marginRight: 6,
-    minWidth: Platform.OS === 'ios' ? 44 : 48,
-    minHeight: Platform.OS === 'ios' ? 44 : 48,
-    justifyContent: "center",
-    alignItems: "center",
+  title: {
+    fontSize: 36,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
   },
   checkboxRow: {
     flexDirection: "row",
@@ -1092,18 +1092,6 @@ const styles = StyleSheet.create({
   checkboxLabel: {
     flex: 1,
     fontSize: 14,
-  },
-
-  backArrow: {
-    fontSize: 34,
-    fontWeight: "700",
-  },
-
-  headerText: {
-    fontSize: 34,
-    fontWeight: "800",
-    marginTop: 20,
-    marginBottom: 24,
   },
 
   sectionTitle: {

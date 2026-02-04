@@ -75,31 +75,42 @@ export default function BlockListScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <GlobalBackground />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityLabel="Go back"
-          accessibilityRole="button"
-        >
-          <Ionicons name="chevron-back" size={28} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>Blocked Users</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityLabel="Go back"
+        accessibilityRole="button"
+        accessibilityHint="Returns to previous screen"
+      >
+        <Ionicons
+          name="chevron-back"
+          size={30}
+          color={colors.text}
+          accessible={false}
+          importantForAccessibility="no"
+        />
+      </TouchableOpacity>
+      <Text
+        style={[styles.title, { color: colors.text }]}
+        accessible={true}
+        accessibilityRole="header"
+        allowFontScaling={true}
+      >
+        Blocked Users
+      </Text>
 
       {loading ? (
         <ActivityIndicator color={colors.accent} style={{ marginTop: 20 }} />
       ) : error ? (
-        <Text style={{ color: colors.text, padding: 16 }}>{error}</Text>
+        <Text style={{ color: colors.text }}>{error}</Text>
       ) : blocked.length === 0 ? (
-        <Text style={{ color: colors.subtitle, padding: 16 }}>You haven't blocked anyone.</Text>
+        <Text style={{ color: colors.subtitle }}>You haven't blocked anyone.</Text>
       ) : (
         <FlatList
           data={blocked}
           keyExtractor={(item) => item.uid}
-          contentContainerStyle={{ padding: 16, gap: 12 }}
+          contentContainerStyle={{ paddingBottom: 100, gap: 12 }}
           renderItem={({ item }) => (
             <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <TouchableOpacity
@@ -136,21 +147,22 @@ export default function BlockListScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
+  container: {
+    flex: 1,
     paddingTop: 60,
-    paddingBottom: 12,
-    justifyContent: "space-between",
+    paddingHorizontal: 20,
   },
-  backBtn: {
-    padding: 4,
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 36,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
   },
   row: {
     flexDirection: "row",

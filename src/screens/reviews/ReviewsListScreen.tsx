@@ -317,7 +317,34 @@ export default function ReviewsListScreen({
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <GlobalBackground />
 
-      <ScrollView 
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+        accessible={true}
+        accessibilityLabel="Go back"
+        accessibilityRole="button"
+        accessibilityHint="Returns to previous screen"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons
+          name="chevron-back"
+          size={30}
+          color={colors.text}
+          accessible={false}
+          importantForAccessibility="no"
+        />
+      </TouchableOpacity>
+
+      <Text
+        style={[styles.title, { color: colors.text }]}
+        accessible={true}
+        accessibilityRole="header"
+        allowFontScaling={true}
+      >
+        Reviews
+      </Text>
+
+      <ScrollView
         contentContainerStyle={styles.scrollWrap}
         showsVerticalScrollIndicator={false}
         accessible={false}
@@ -331,37 +358,6 @@ export default function ReviewsListScreen({
           />
         }
       >
-        <View style={styles.heroRow}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={[styles.backButton, { borderColor: colors.border }]}
-            accessible={true}
-            accessibilityLabel="Go back"
-            accessibilityRole="button"
-            accessibilityHint="Returns to previous screen"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={26}
-              color={colors.text}
-              accessible={false}
-              importantForAccessibility="no"
-            />
-          </TouchableOpacity>
-
-          <View accessible={false} importantForAccessibility="no">
-            <Text 
-              style={[styles.headerTitle, { color: colors.text }]}
-              accessible={true}
-              accessibilityRole="header"
-              allowFontScaling={true}
-            >
-              Reviews
-            </Text>
-          </View>
-        </View>
-
         {error && (
           <View style={[styles.errorBanner, { borderColor: colors.accent }]}>
             <Text style={[styles.errorText, { color: colors.text }]}>{error}</Text>
@@ -477,31 +473,22 @@ export default function ReviewsListScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
   },
 
-  heroRow: {
-    paddingTop: 70,
-    paddingBottom: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
   },
 
-  backButton: { 
-    paddingHorizontal: 6,
-    paddingVertical: 6,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: "700",
-  },
-  headerSubtitle: {
-    marginTop: 6,
-    fontSize: 14,
+  title: {
+    fontSize: 36,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
   },
 
   centerWrap: {
@@ -517,7 +504,6 @@ const styles = StyleSheet.create({
   },
 
   scrollWrap: {
-    paddingHorizontal: 20,
     paddingBottom: 120,
   },
 
