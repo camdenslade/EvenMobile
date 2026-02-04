@@ -62,8 +62,12 @@ import { useFocusEffect } from "@react-navigation/native";
 import { PurchaseOptionsModal } from "../../components/PurchaseOptionsModal";
 
 import { useAppCache } from "../../services/appCache";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const TAB_STORAGE_KEY = "@EvenApp:profileActiveTab";
+type TabKey = "account" | "safety" | "reviews";
 
 interface ReviewSummary {
   average: number | null;
@@ -102,8 +106,10 @@ export default function ProfileScreen({
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [purchaseFeature, setPurchaseFeature] = useState<"search" | "undo" | "messageRequest" | "subscription">("search");
   const [showSearchConfirm, setShowSearchConfirm] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>("account");
 
   const hasRefreshedRef = useRef(false);
+  const hasHydratedTabRef = useRef(false);
 
   //********************************************************************
   //
@@ -186,6 +192,29 @@ export default function ProfileScreen({
       return undefined;
     }, [])
   );
+
+  // Hydrate persisted tab selection
+  useEffect(() => {
+    async function loadTab() {
+      try {
+        const stored = await AsyncStorage.getItem(TAB_STORAGE_KEY);
+        if (stored === "account" || stored === "safety" || stored === "reviews") {
+          setActiveTab(stored);
+        }
+      } catch {
+        // ignore load errors; default tab will be used
+      } finally {
+        hasHydratedTabRef.current = true;
+      }
+    }
+    loadTab();
+  }, []);
+
+  // Persist tab changes (after hydration to avoid clobbering)
+  useEffect(() => {
+    if (!hasHydratedTabRef.current) return;
+    AsyncStorage.setItem(TAB_STORAGE_KEY, activeTab).catch(() => {});
+  }, [activeTab]);
 
   const navigateWithFade = useCallback(
     (route: string, params?: any) => {
@@ -374,11 +403,40 @@ export default function ProfileScreen({
           </Text>
         </View>
 
+        {/* Segmented Tab Control */}
+        <View style={[styles.tabContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {(["account", "reviews", "safety"] as const).map((tab) => {
+            const isActive = activeTab === tab;
+            const label = tab === "account" ? "Account" : tab === "reviews" ? "Reviews" : "Safety";
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  styles.tabButton,
+                  isActive && [styles.tabButtonActive, { backgroundColor: colors.accent }],
+                ]}
+                onPress={() => setActiveTab(tab)}
+                accessible={true}
+                accessibilityLabel={label}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isActive }}
+              >
+                <Text
+                  style={[
+                    styles.tabButtonText,
+                    { color: isActive ? colors.buttonText : colors.subtitle },
+                  ]}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
         {/* Account Section */}
+        {activeTab === "account" && (
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Account
-          </Text>
 
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardRow}>
@@ -546,13 +604,11 @@ export default function ProfileScreen({
             </Text>
           </TouchableOpacity>
         </View>
+        )}
 
         {/* Reviews Section */}
+        {activeTab === "reviews" && (
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Reviews
-          </Text>
-
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             {reviewSummary && reviewSummary.count > 0 ? (
               <RatingGauge
@@ -594,13 +650,11 @@ export default function ProfileScreen({
             </Text>
           </TouchableOpacity>
         </View>
+        )}
 
         {/* Safety Section */}
+        {activeTab === "safety" && (
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Safety
-          </Text>
-
           <TouchableOpacity
             style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => navigateWithFade("Safety")}
@@ -655,6 +709,7 @@ export default function ProfileScreen({
             </Text>
           </TouchableOpacity>
         </View>
+        )}
 
         <TouchableOpacity
           onPress={() => navigateWithFade("EditProfile")}
@@ -880,6 +935,29 @@ const styles = StyleSheet.create({
   editProfileText: {
     fontSize: 16,
     fontWeight: "700",
+  },
+
+  tabContainer: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    marginBottom: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabButtonActive: {
+    // backgroundColor set dynamically
+  },
+  tabButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
 
