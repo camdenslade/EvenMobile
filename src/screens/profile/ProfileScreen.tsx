@@ -406,7 +406,7 @@ export default function ProfileScreen({
         <View style={styles.tabsRow}>
           {(["getperks", "safety", "reviews"] as const).map((t) => {
             const active = activeTab === t;
-            const label = t === "getperks" ? "Get Perks" : t === "safety" ? "Safety" : "Reviews";
+            const label = t === "getperks" ? "Perks" : t === "safety" ? "Safety" : "Reviews";
             return (
               <TouchableOpacity
                 key={t}
