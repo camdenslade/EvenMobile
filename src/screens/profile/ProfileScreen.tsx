@@ -62,7 +62,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { PurchaseOptionsModal } from "../../components/PurchaseOptionsModal";
 
 import { useAppCache } from "../../services/appCache";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -76,9 +75,6 @@ interface ProfileScreenProps {
   navigation?: any;
   __prerender?: boolean;
 }
-
-const TAB_STORAGE_KEY = "@EvenApp:profileActiveTab";
-type TabKey = "getperks" | "safety" | "reviews";
 
 export default function ProfileScreen({
   navigation,
@@ -100,17 +96,14 @@ export default function ProfileScreen({
   const profile = useAppCache((s) => s.profile);
   const setProfile = useAppCache((s) => s.setProfile);
 
-  const [activeTab, setActiveTab] =
-    useState<TabKey>("getperks");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [navigating, setNavigating] = useState(false);
   const fadeOverlay = useRef(new Animated.Value(0));
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [purchaseFeature, setPurchaseFeature] = useState<"search" | "undo" | "messageRequest" | "subscription">("search");
   const [showSearchConfirm, setShowSearchConfirm] = useState(false);
-  
+
   const hasRefreshedRef = useRef(false);
-  const hasHydratedTabRef = useRef(false);
 
   //********************************************************************
   //
@@ -193,29 +186,6 @@ export default function ProfileScreen({
       return undefined;
     }, [])
   );
-
-  // Hydrate persisted tab selection
-  useEffect(() => {
-    async function loadTab() {
-      try {
-        const stored = await AsyncStorage.getItem(TAB_STORAGE_KEY);
-        if (stored === "getperks" || stored === "safety" || stored === "reviews") {
-          setActiveTab(stored);
-        }
-      } catch {
-        // ignore load errors; default tab will be used
-      } finally {
-        hasHydratedTabRef.current = true;
-      }
-    }
-    loadTab();
-  }, []);
-
-  // Persist tab changes (after hydration to avoid clobbering)
-  useEffect(() => {
-    if (!hasHydratedTabRef.current) return;
-    AsyncStorage.setItem(TAB_STORAGE_KEY, activeTab).catch(() => {});
-  }, [activeTab]);
 
   const navigateWithFade = useCallback(
     (route: string, params?: any) => {
@@ -404,61 +374,22 @@ export default function ProfileScreen({
           </Text>
         </View>
 
-        <View 
-          style={styles.tabsRow}
-          accessible={false}
-          importantForAccessibility="no"
-        >
-          {["getperks", "safety", "reviews"].map((t) => {
-            const active = activeTab === t;
-            const label = t === "getperks" ? "Get Perks" : t === "safety" ? "Safety" : "Reviews";
-            return (
-              <TouchableOpacity
-                key={t}
-                onPress={() => setActiveTab(t as any)}
-                style={[
-                  styles.tab,
-                  active && {
-                    borderBottomColor: colors.accent,
-                    borderBottomWidth: 3,
-                  },
-                ]}
-                accessible={true}
-                accessibilityLabel={label}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: active }}
-                accessibilityHint={`Switches to ${label} tab`}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    { color: active ? colors.text : colors.subtitle },
-                  ]}
-                  allowFontScaling={true}
-                  accessible={false}
-                  importantForAccessibility="no"
-                >
-                  {label}
+        {/* Account Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Account
+          </Text>
+
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.cardRow}>
+              <View style={styles.cardRowContent}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>
+                  Membership
                 </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {activeTab === "getperks" && (
-          <View style={styles.section}>
-            <View style={[styles.heroCard, { backgroundColor: colors.card }]}>
-              <Text style={[styles.heroTitleSmall, { color: colors.text }]}>
-                Odd Membership
-              </Text>
-
-              <Text style={[styles.heroSubtitleCompact, { color: colors.subtitle }]}>
-                {userSummary?.isSubscribed
-                  ? "Premium account."
-                  : "Standard account."}
-              </Text>
-
+                <Text style={[styles.cardText, { color: colors.subtitle }]}>
+                  {userSummary?.isSubscribed ? "Premium" : "Standard"}
+                </Text>
+              </View>
               {!userSummary?.isSubscribed && (
                 <TouchableOpacity
                   style={[styles.subscribeBtn, { backgroundColor: colors.accent }]}
@@ -472,259 +403,258 @@ export default function ProfileScreen({
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Text style={[styles.subscribeText, { color: colors.buttonText }]}>
-                    Subscribe
+                    Upgrade
                   </Text>
                 </TouchableOpacity>
               )}
             </View>
-
-
-            <TouchableOpacity
-              style={[styles.searchBtn, { backgroundColor: colors.card }]}
-              onPress={() => {
-                const pf = paymentFlags || {
-                  enablePayments: true,
-                  enableSearchTokens: true,
-                  enableUndoTokens: true,
-                  enableMessageReqTokens: true,
-                };
-                const uf = userFlags || {
-                  unlimitedSearch: false,
-                  unlimitedUndo: false,
-                  unlimitedMessageReq: false,
-                };
-                const hasSearch =
-                  !pf.enablePayments ||
-                  !pf.enableSearchTokens ||
-                  uf.unlimitedSearch ||
-                  (userSummary?.searchTokens ?? 0) > 0;
-
-                if (!hasSearch) {
-                  setPurchaseFeature("search");
-                  setShowPurchaseModal(true);
-                  return;
-                }
-
-                setShowSearchConfirm(true);
-              }}
-              accessible={true}
-              accessibilityLabel="Search"
-              accessibilityRole="button"
-              accessibilityHint="Opens search screen to look up users by name"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Text 
-                style={[styles.searchTitle, { color: colors.text }]}
-                allowFontScaling={true}
-                accessible={false}
-                importantForAccessibility="no"
-              >
-                Search
-              </Text>
-              <Text 
-                style={[styles.searchSubtitle, { color: colors.subtitle }]}
-                allowFontScaling={true}
-                accessible={false}
-                importantForAccessibility="no"
-              >
-                {userSummary ? `${userSummary.searchTokens} searches remaining` : "Look up anyone by name."}
-              </Text>
-            </TouchableOpacity>
-
-            <View style={styles.tileGrid}>
-              <TouchableOpacity
-                style={[styles.tile, { backgroundColor: colors.card }]}
-                onPress={() => {
-                  const pf = paymentFlags || {
-                    enablePayments: true,
-                    enableSearchTokens: true,
-                    enableUndoTokens: true,
-                    enableMessageReqTokens: true,
-                  };
-                  const uf = userFlags || {
-                    unlimitedSearch: false,
-                    unlimitedUndo: false,
-                    unlimitedMessageReq: false,
-                  };
-                  const hasMessage =
-                    !pf.enablePayments ||
-                    !pf.enableMessageReqTokens ||
-                    uf.unlimitedMessageReq ||
-                    (userSummary?.messageTokens ?? 0) > 0;
-
-                  if (!hasMessage) {
-                    setPurchaseFeature("messageRequest");
-                    setShowPurchaseModal(true);
-                  }
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Message tokens"
-                accessibilityHint="Purchase message request tokens when empty"
-              >
-                <Text 
-                  style={[styles.tileTitle, { color: colors.text }]}
-                  allowFontScaling={true}
-                  accessible={false}
-                  importantForAccessibility="no"
-                >
-                  Messages
-                </Text>
-                <Text 
-                  style={[styles.tileSubtitle, { color: colors.subtitle }]}
-                  allowFontScaling={true}
-                  accessible={false}
-                  importantForAccessibility="no"
-                >
-                  {userSummary ? `${userSummary.messageTokens} message requests remaining` : "Start the conversation."}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.tile, { backgroundColor: colors.card }]}
-                onPress={() => {
-                  const pf = paymentFlags || {
-                    enablePayments: true,
-                    enableSearchTokens: true,
-                    enableUndoTokens: true,
-                    enableMessageReqTokens: true,
-                  };
-                  const uf = userFlags || {
-                    unlimitedSearch: false,
-                    unlimitedUndo: false,
-                    unlimitedMessageReq: false,
-                  };
-                  const hasUndo =
-                    !pf.enablePayments ||
-                    !pf.enableUndoTokens ||
-                    uf.unlimitedUndo ||
-                    (userSummary?.undoTokens ?? 0) > 0;
-
-                  if (!hasUndo) {
-                    setPurchaseFeature("undo");
-                    setShowPurchaseModal(true);
-                  }
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Undo tokens"
-                accessibilityHint="Purchase undo tokens when empty"
-              >
-                <Text style={[styles.tileTitle, { color: colors.text }]}>
-                  Undo
-                </Text>
-                <Text style={[styles.tileSubtitle, { color: colors.subtitle }]}>
-                  {userSummary ? `${userSummary.undoTokens} undos remaining` : "Go back to your last swipe."}
-                </Text>
-              </TouchableOpacity>
-            </View>
           </View>
-        )}
 
-        {activeTab === "reviews" && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Your Ratings
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => {
+              const pf = paymentFlags || {
+                enablePayments: true,
+                enableSearchTokens: true,
+                enableUndoTokens: true,
+                enableMessageReqTokens: true,
+              };
+              const uf = userFlags || {
+                unlimitedSearch: false,
+                unlimitedUndo: false,
+                unlimitedMessageReq: false,
+              };
+              const hasSearch =
+                !pf.enablePayments ||
+                !pf.enableSearchTokens ||
+                uf.unlimitedSearch ||
+                (userSummary?.searchTokens ?? 0) > 0;
+
+              if (!hasSearch) {
+                setPurchaseFeature("search");
+                setShowPurchaseModal(true);
+                return;
+              }
+
+              setShowSearchConfirm(true);
+            }}
+            accessible={true}
+            accessibilityLabel="Search"
+            accessibilityRole="button"
+            accessibilityHint="Opens search screen to look up users by name"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text
+              style={[styles.cardTitle, { color: colors.text }]}
+              allowFontScaling={true}
+              accessible={false}
+              importantForAccessibility="no"
+            >
+              Search
             </Text>
-
-            <View style={[styles.card, { backgroundColor: colors.card }]}>
-              {reviewSummary && reviewSummary.count > 0 ? (
-                <RatingGauge
-                  average={reviewSummary.average ?? 0}
-                  count={reviewSummary.count}
-                  best={reviewSummary.best ?? 10}
-                />
-              ) : (
-                <Text style={[styles.cardText, { color: colors.subtitle }]}>
-                  You have no reviews yet.
-                </Text>
-              )}
-            </View>
-
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: colors.card }]}
-              onPress={() => navigateWithFade("ReviewsList")}
-              accessible={true}
-              accessibilityLabel="View all reviews"
-              accessibilityRole="button"
-              accessibilityHint="Opens list of all reviews"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            <Text
+              style={[styles.cardText, { color: colors.subtitle }]}
+              allowFontScaling={true}
+              accessible={false}
+              importantForAccessibility="no"
             >
-              <Text 
-                style={[styles.cardTitle, { color: colors.text }]}
-                allowFontScaling={true}
-                accessible={false}
-                importantForAccessibility="no"
-              >
-                View All Reviews
+              {userSummary ? `${userSummary.searchTokens} searches remaining` : "Look up anyone by name."}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => {
+              const pf = paymentFlags || {
+                enablePayments: true,
+                enableSearchTokens: true,
+                enableUndoTokens: true,
+                enableMessageReqTokens: true,
+              };
+              const uf = userFlags || {
+                unlimitedSearch: false,
+                unlimitedUndo: false,
+                unlimitedMessageReq: false,
+              };
+              const hasMessage =
+                !pf.enablePayments ||
+                !pf.enableMessageReqTokens ||
+                uf.unlimitedMessageReq ||
+                (userSummary?.messageTokens ?? 0) > 0;
+
+              if (!hasMessage) {
+                setPurchaseFeature("messageRequest");
+                setShowPurchaseModal(true);
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Message tokens"
+            accessibilityHint="Purchase message request tokens when empty"
+          >
+            <Text
+              style={[styles.cardTitle, { color: colors.text }]}
+              allowFontScaling={true}
+              accessible={false}
+              importantForAccessibility="no"
+            >
+              Messages
+            </Text>
+            <Text
+              style={[styles.cardText, { color: colors.subtitle }]}
+              allowFontScaling={true}
+              accessible={false}
+              importantForAccessibility="no"
+            >
+              {userSummary ? `${userSummary.messageTokens} message requests remaining` : "Start the conversation."}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => {
+              const pf = paymentFlags || {
+                enablePayments: true,
+                enableSearchTokens: true,
+                enableUndoTokens: true,
+                enableMessageReqTokens: true,
+              };
+              const uf = userFlags || {
+                unlimitedSearch: false,
+                unlimitedUndo: false,
+                unlimitedMessageReq: false,
+              };
+              const hasUndo =
+                !pf.enablePayments ||
+                !pf.enableUndoTokens ||
+                uf.unlimitedUndo ||
+                (userSummary?.undoTokens ?? 0) > 0;
+
+              if (!hasUndo) {
+                setPurchaseFeature("undo");
+                setShowPurchaseModal(true);
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Undo tokens"
+            accessibilityHint="Purchase undo tokens when empty"
+          >
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              Undo
+            </Text>
+            <Text style={[styles.cardText, { color: colors.subtitle }]}>
+              {userSummary ? `${userSummary.undoTokens} undos remaining` : "Go back to your last swipe."}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Reviews Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Reviews
+          </Text>
+
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {reviewSummary && reviewSummary.count > 0 ? (
+              <RatingGauge
+                average={reviewSummary.average ?? 0}
+                count={reviewSummary.count}
+                best={reviewSummary.best ?? 10}
+              />
+            ) : (
+              <Text style={[styles.cardText, { color: colors.subtitle }]}>
+                You have no reviews yet.
               </Text>
-              <Text 
-                style={[styles.cardText, { color: colors.subtitle }]}
-                allowFontScaling={true}
-                accessible={false}
-                importantForAccessibility="no"
-              >
-                See all ratings and comments.
-              </Text>
-            </TouchableOpacity>
+            )}
           </View>
-        )}
 
-        {activeTab === "safety" && (
-          <View style={styles.section}>
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: colors.card }]}
-              onPress={() => navigateWithFade("Safety")}
-              accessible={true}
-              accessibilityLabel="Safety Center"
-              accessibilityRole="button"
-              accessibilityHint="Opens safety center with tips and tools"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => navigateWithFade("ReviewsList")}
+            accessible={true}
+            accessibilityLabel="View all reviews"
+            accessibilityRole="button"
+            accessibilityHint="Opens list of all reviews"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text
+              style={[styles.cardTitle, { color: colors.text }]}
+              allowFontScaling={true}
+              accessible={false}
+              importantForAccessibility="no"
             >
-              <Text 
-                style={[styles.cardTitle, { color: colors.text }]}
-                allowFontScaling={true}
-                accessible={false}
-                importantForAccessibility="no"
-              >
-                Safety Center
-              </Text>
-              <Text 
-                style={[styles.cardText, { color: colors.subtitle }]}
-                allowFontScaling={true}
-                accessible={false}
-                importantForAccessibility="no"
-              >
-                Tips and tools for safer dating.
-              </Text>
-            </TouchableOpacity>
+              View All Reviews
+            </Text>
+            <Text
+              style={[styles.cardText, { color: colors.subtitle }]}
+              allowFontScaling={true}
+              accessible={false}
+              importantForAccessibility="no"
+            >
+              See all ratings and comments.
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: colors.card }]}
-              onPress={() => navigateWithFade("BlockList")}
-              accessible={true}
-              accessibilityLabel="Blocked users"
-              accessibilityRole="button"
-              accessibilityHint="View and manage your blocked list"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        {/* Safety Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Safety
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => navigateWithFade("Safety")}
+            accessible={true}
+            accessibilityLabel="Safety Center"
+            accessibilityRole="button"
+            accessibilityHint="Opens safety center with tips and tools"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text
+              style={[styles.cardTitle, { color: colors.text }]}
+              allowFontScaling={true}
+              accessible={false}
+              importantForAccessibility="no"
             >
-              <Text 
-                style={[styles.cardTitle, { color: colors.text }]}
-                allowFontScaling={true}
-                accessible={false}
-                importantForAccessibility="no"
-              >
-                Block List
-              </Text>
-              <Text 
-                style={[styles.cardText, { color: colors.subtitle }]}
-                allowFontScaling={true}
-                accessible={false}
-                importantForAccessibility="no"
-              >
-                See who you’ve blocked and unblock if needed.
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+              Safety Center
+            </Text>
+            <Text
+              style={[styles.cardText, { color: colors.subtitle }]}
+              allowFontScaling={true}
+              accessible={false}
+              importantForAccessibility="no"
+            >
+              Tips and tools for safer dating.
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => navigateWithFade("BlockList")}
+            accessible={true}
+            accessibilityLabel="Blocked users"
+            accessibilityRole="button"
+            accessibilityHint="View and manage your blocked list"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text
+              style={[styles.cardTitle, { color: colors.text }]}
+              allowFontScaling={true}
+              accessible={false}
+              importantForAccessibility="no"
+            >
+              Block List
+            </Text>
+            <Text
+              style={[styles.cardText, { color: colors.subtitle }]}
+              allowFontScaling={true}
+              accessible={false}
+              importantForAccessibility="no"
+            >
+              See who you've blocked and unblock if needed.
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           onPress={() => navigateWithFade("EditProfile")}
@@ -880,24 +810,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  tabsRow: {
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    marginVertical: 20,
-  },
-    tab: {
-      alignItems: "center",
-      paddingBottom: 8,
-      paddingHorizontal: 12,
-    },
-  tabText: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-
   section: {
     paddingHorizontal: 20,
-    marginTop: 10,
+    marginTop: 20,
   },
   sectionTitle: {
     fontSize: 22,
@@ -907,83 +822,35 @@ const styles = StyleSheet.create({
 
   card: {
     padding: 20,
-    borderRadius: 16,
+    borderRadius: 12,
     marginBottom: 20,
+    borderWidth: 1,
+  },
+  cardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  cardRowContent: {
+    flex: 1,
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    marginBottom: 6,
   },
-  cardText: { fontSize: 15, lineHeight: 22 },
+  cardText: { fontSize: 14, marginTop: 4 },
 
-  heroCard: {
-    padding: 26,
-    borderRadius: 18,
-    marginBottom: 24,
-    alignItems: "center",
-  },
-  heroTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  heroSubtitle: {
-    fontSize: 16,
-    marginTop: 6,
-    marginBottom: 20,
-    textAlign: "center",
-  },
   subscribeBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 8,
-    alignSelf: "center",
     minHeight: Platform.OS === 'ios' ? 44 : 48,
     justifyContent: "center",
   },
   subscribeText: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-
-  searchBtn: {
-    width: "100%",
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    marginBottom: 16,
-  },
-  searchTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  searchSubtitle: {
     fontSize: 14,
-    marginTop: 4,
-  },
-
-  tileGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  tile: {
-    width: "48%",
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    marginBottom: 16,
-  },
-  tileTitle: {
-    fontSize: 18,
     fontWeight: "700",
-  },
-  tileSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
   },
 
   errorBanner: {
@@ -1013,16 +880,6 @@ const styles = StyleSheet.create({
   editProfileText: {
     fontSize: 16,
     fontWeight: "700",
-  },
-  heroTitleSmall: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  heroSubtitleCompact: {
-    fontSize: 14,
-    marginBottom: 14,
-    textAlign: "center",
   },
 });
 
