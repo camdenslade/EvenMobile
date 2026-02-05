@@ -76,6 +76,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { OTPInput } from "../components/OTPInput";
 import { TERMS_OF_SERVICE } from "./legal/terms";
 import { PRIVACY_POLICY } from "./legal/privacy";
+import { resetTutorial } from "../utils/tutorialStorage";
 
 // Settings types and utilities
 import {
@@ -1818,6 +1819,46 @@ export default function SettingsScreen({
           </Text>
         </TouchableOpacity>
 
+        {/* REPLAY TUTORIAL */}
+        <Text
+          style={[styles.sectionTitle, { color: colors.text, marginTop: 30 }]}
+          accessible={true}
+          accessibilityRole="header"
+          allowFontScaling={true}
+        >
+          Help
+        </Text>
+
+        <TouchableOpacity
+          style={[
+            styles.tutorialBtn,
+            styles.surfaceShadow,
+            { backgroundColor: colors.card, borderColor: colors.subtitle },
+          ]}
+          onPress={async () => {
+            await resetTutorial();
+            Alert.alert(
+              "Tutorial Reset",
+              "The tutorial will show again when you return to the swipe screen.",
+              [{ text: "OK" }]
+            );
+          }}
+          accessible={true}
+          accessibilityLabel="Replay Tutorial"
+          accessibilityRole="button"
+          accessibilityHint="Resets the tutorial so you can see it again"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text
+            style={[styles.tutorialText, { color: colors.text }]}
+            allowFontScaling={true}
+            accessible={false}
+            importantForAccessibility="no"
+          >
+            Replay Tutorial
+          </Text>
+        </TouchableOpacity>
+
         {/* SIGN OUT */}
         <TouchableOpacity
           style={[
@@ -1832,7 +1873,7 @@ export default function SettingsScreen({
           accessibilityHint="Signs out of your account"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text 
+          <Text
             style={[styles.signOutText, { color: colors.text }]}
             allowFontScaling={true}
             accessible={false}
@@ -2538,6 +2579,23 @@ const styles = StyleSheet.create({
     minHeight: Platform.OS === "ios" ? 44 : 48,
   },
   feedbackText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  // Tutorial
+  tutorialBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 30,
+    minHeight: Platform.OS === "ios" ? 44 : 48,
+  },
+  tutorialText: {
     fontSize: 16,
     fontWeight: "600",
   },

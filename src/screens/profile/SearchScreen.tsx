@@ -45,7 +45,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
-  Dimensions,
+  Modal,
 } from "react-native";
 import { AppImage } from "../../components/AppImage";
 
@@ -57,8 +57,7 @@ import GlobalBackground from "../../components/GlobalBackground";
 import { useSessionData } from "../../context/SessionDataContext";
 import { PurchaseOptionsModal } from "../../components/PurchaseOptionsModal";
 import { InlineAlert } from "../../components/InlineAlert";
-
-const { width: screenWidth } = Dimensions.get("window");
+import { normalizePhotos } from "../../utils/photoUtils";
 
 interface SearchResult {
   userUid: string;
@@ -67,6 +66,12 @@ interface SearchResult {
   bio: string;
   profileImageUrl: string | null;
   distanceMiles: number;
+  photos?: (string | null)[];
+  datingPreference?: string;
+  school?: string;
+  major?: string;
+  gradYear?: number;
+  showSchoolInfo?: boolean;
 }
 
 interface SearchScreenProps {
@@ -107,6 +112,8 @@ export default function SearchScreen({
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   //********************************************************************
@@ -157,28 +164,55 @@ export default function SearchScreen({
         return;
       }
 
-      if (!idToken) {
-        setError("Missing auth token.");
+      try {
+        const data = await apiGet<SearchResult[]>(
+          `/search/name?name=${encodeURIComponent(trimmed)}`,
+          idToken ?? undefined,
+        );
+
+        if (!data) {
+          setError("Search failed.");
+          setLoading(false);
+          // Still refresh session data - token may have been consumed
+          refreshSessionData().catch((err) => {
+            console.error("Failed to refresh session after search:", err);
+          });
+          return;
+        }
+
+        setResults(data);
         setLoading(false);
-        return;
-      }
+        setHasSearched(true);
 
-      const data = await apiGet<SearchResult[]>(
-        `/search/name?name=${encodeURIComponent(trimmed)}`,
-        idToken,
-      );
-
-      if (!data) {
-        setError("Search failed.");
+        // Refresh session data to update token count (non-blocking)
+        refreshSessionData().catch((err) => {
+          console.error("Failed to refresh session after search:", err);
+          // Search succeeded, just token count might be stale
+        });
+      } catch (error) {
+        console.error("Search API error:", error);
+        setError("Search failed. Please try again.");
         setLoading(false);
-        return;
+        // Still refresh session data - token may have been consumed
+        refreshSessionData().catch((err) => {
+          console.error("Failed to refresh session after search error:", err);
+        });
       }
-
-      setResults(data);
-      setLoading(false);
-      refreshSessionData().catch(() => {});
     }, 250);
   }
+
+  const handleGoBack = () => {
+    if (results.length > 0) {
+      setShowExitModal(true);
+    } else {
+      navigation.goBack();
+    }
+  };
+
+  const confirmExit = () => {
+    setShowExitModal(false);
+    navigation.goBack();
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -186,7 +220,7 @@ export default function SearchScreen({
 
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => navigation.goBack()}
+        onPress={handleGoBack}
         accessible={true}
         accessibilityLabel="Go back"
         accessibilityRole="button"
@@ -215,14 +249,15 @@ export default function SearchScreen({
         style={[
           styles.input,
           {
-            backgroundColor: colors.card,
-            color: colors.text,
+            backgroundColor: hasSearched ? colors.card + '80' : colors.card,
+            color: hasSearched ? colors.subtitle : colors.text,
           },
         ]}
         placeholder="Enter name"
         placeholderTextColor={colors.subtitle}
         value={query}
         onChangeText={setQuery}
+        editable={!hasSearched}
         accessible={true}
         accessibilityLabel="Search name input"
         accessibilityRole="none"
@@ -231,17 +266,27 @@ export default function SearchScreen({
       />
 
       <TouchableOpacity
-        style={[styles.searchBtn, { backgroundColor: colors.accent }]}
+        style={[
+          styles.searchBtn,
+          {
+            backgroundColor: hasSearched ? colors.card : colors.accent,
+            opacity: hasSearched ? 0.5 : 1,
+          },
+        ]}
         onPress={handleSearch}
+        disabled={hasSearched || loading}
         accessible={true}
         accessibilityLabel="Search"
         accessibilityRole="button"
         accessibilityHint="Searches for profiles matching the entered name"
-        accessibilityState={{ disabled: loading }}
+        accessibilityState={{ disabled: loading || hasSearched }}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Text 
-          style={[styles.searchText, { color: colors.buttonText }]}
+        <Text
+          style={[
+            styles.searchText,
+            { color: hasSearched ? colors.subtitle : colors.buttonText },
+          ]}
           allowFontScaling={true}
           accessible={false}
           importantForAccessibility="no"
@@ -251,14 +296,14 @@ export default function SearchScreen({
       </TouchableOpacity>
 
       {loading && (
-        <View 
+        <View
           style={styles.loadingWrap}
           accessible={true}
           accessibilityLabel="Searching"
           accessibilityRole="none"
         >
           <ActivityIndicator size="large" color={colors.text} />
-          <Text 
+          <Text
             style={[styles.loadingText, { color: colors.text }]}
             allowFontScaling={true}
             accessible={false}
@@ -281,6 +326,8 @@ export default function SearchScreen({
         <View style={styles.resultsGrid}>
           {results.map((r) => {
             const displayName = r.age ? `${r.name} • ${r.age}` : r.name;
+            const photos = normalizePhotos(r.photos, r.profileImageUrl ?? null);
+            const photoUrl = photos[0] ?? "https://via.placeholder.com/100";
 
             return (
               <TouchableOpacity
@@ -290,11 +337,11 @@ export default function SearchScreen({
                   styles.cardShadow,
                   { backgroundColor: '#ffffff', borderColor: '#e0e0e0' },
                 ]}
-                onPress={() =>
+                onPress={() => {
                   navigation.navigate("UserProfileView", {
                     userId: r.userUid,
-                  })
-                }
+                  });
+                }}
                 accessible={true}
                 accessibilityLabel={`${r.name}, age ${r.age}. Tap to view profile`}
                 accessibilityRole="button"
@@ -302,7 +349,7 @@ export default function SearchScreen({
               >
                 <View style={styles.imageWrap}>
                   <AppImage
-                    source={r.profileImageUrl ?? "https://via.placeholder.com/100"}
+                    source={photoUrl}
                     style={styles.resultCardImage}
                     accessibilityLabel={`Profile photo of ${r.name}`}
                     accessibilityRole="image"
@@ -347,6 +394,51 @@ export default function SearchScreen({
           await refreshSessionData();
         }}
       />
+
+      {/* Exit confirmation modal */}
+      <Modal
+        visible={showExitModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowExitModal(false)}
+      >
+        <View style={styles.modalCenter}>
+          <View style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.subtitle }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              Leave Search?
+            </Text>
+            <Text style={[styles.modalSubtitle, { color: colors.subtitle }]}>
+              Your search results will be lost if you leave this screen.
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: colors.accent }]}
+              onPress={() => setShowExitModal(false)}
+              accessible={true}
+              accessibilityLabel="Stay on search"
+              accessibilityRole="button"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnText, { color: colors.buttonText }]}>
+                Stay
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalBtnOutline, { borderColor: colors.text }]}
+              onPress={confirmExit}
+              accessible={true}
+              accessibilityLabel="Leave search"
+              accessibilityRole="button"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnOutlineText, { color: colors.text }]}>
+                Leave
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -405,7 +497,7 @@ const styles = StyleSheet.create({
   },
 
   resultCard: {
-    width: (screenWidth - 52) / 2,
+    width: "48%",
     height: 220,
     borderRadius: 12,
     overflow: "hidden",
@@ -445,6 +537,61 @@ const styles = StyleSheet.create({
   noResults: {
     textAlign: "center",
     marginTop: 40,
+    fontSize: 16,
+  },
+
+  // Modal styles - matching onboarding modal design
+  modalCenter: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 30,
+  },
+
+  modalBox: {
+    width: "100%",
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+  },
+
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+
+  modalSubtitle: {
+    fontSize: 15,
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+
+  modalBtn: {
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 10,
+    minHeight: Platform.OS === 'ios' ? 44 : 48,
+    justifyContent: "center",
+  },
+
+  modalBtnText: {
+    fontWeight: "700",
+    textAlign: "center",
+    fontSize: 16,
+  },
+
+  modalBtnOutline: {
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    minHeight: Platform.OS === 'ios' ? 44 : 48,
+    justifyContent: "center",
+  },
+
+  modalBtnOutlineText: {
+    fontWeight: "600",
+    textAlign: "center",
     fontSize: 16,
   },
 });

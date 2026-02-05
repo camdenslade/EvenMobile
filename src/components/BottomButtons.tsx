@@ -41,10 +41,11 @@ import {
   AccessibilityInfo,
   Text,
 } from 'react-native';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppImage } from './AppImage';
 import { useTheme } from '../context/ThemeProvider';
+import { useBottomButtons } from '../context/BottomButtonsContext';
 
 interface Props {
   disabled: boolean;
@@ -60,11 +61,33 @@ export function BottomButtons({ disabled, onUndo, onLike, onMessage, undoTokens,
   const insets = useSafeAreaInsets();
   const opacity = disabled ? 0.35 : 1;
   const [reduceMotion, setReduceMotion] = useState(false);
+  const { setButtonsLayout } = useBottomButtons();
 
   const holdTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const scale = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef<Animated.CompositeAnimation | null>(null);
+  const undoRef = useRef<TouchableOpacity | null>(null);
+  const likeRef = useRef<TouchableOpacity | null>(null);
+  const messageRef = useRef<TouchableOpacity | null>(null);
+
+  const captureLayout = useCallback(
+    (
+      key: 'undo' | 'like' | 'message',
+      ref: { current: TouchableOpacity | null }
+    ) => {
+      const node = ref.current;
+      if (!node) return;
+      node.measureInWindow((x, y, width, height) => {
+        if (!width || !height) return;
+        setButtonsLayout((prev) => {
+          const next = { ...prev, [key]: { x, y, width, height } };
+          return next;
+        });
+      });
+    },
+    [setButtonsLayout]
+  );
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
@@ -239,6 +262,8 @@ export function BottomButtons({ disabled, onUndo, onLike, onMessage, undoTokens,
           onPress={onUndo} 
           disabled={disabled} 
           style={[styles.btn, { backgroundColor: colors.bottomButton }]}
+          ref={undoRef}
+          onLayout={() => captureLayout('undo', undoRef)}
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessible={true}
@@ -267,6 +292,8 @@ export function BottomButtons({ disabled, onUndo, onLike, onMessage, undoTokens,
         onPress={onLike}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        ref={likeRef}
+        onLayout={() => captureLayout('like', likeRef)}
         activeOpacity={0.8}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         accessible={true}
@@ -295,6 +322,8 @@ export function BottomButtons({ disabled, onUndo, onLike, onMessage, undoTokens,
           onPress={onMessage}
           disabled={disabled}
           style={[styles.btn, { backgroundColor: colors.bottomButton }]}
+          ref={messageRef}
+          onLayout={() => captureLayout('message', messageRef)}
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessible={true}

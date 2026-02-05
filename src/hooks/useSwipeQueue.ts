@@ -88,6 +88,7 @@ export function useSwipeQueue() {
   const setQueue = useAppCache((s) => s.setQueue);
   const seenIds = useAppCache((s) => s.seenIds);
   const addSeenIds = useAppCache((s) => s.addSeenIds);
+  const removeSeenIds = useAppCache((s) => s.removeSeenIds);
   const clearSeen = useAppCache((s) => s.clearSeen);
   const myProfile = useAppCache((s) => s.profile) as MyProfile | null;
 
@@ -115,6 +116,8 @@ export function useSwipeQueue() {
   const isSwipingRef = useRef(false);
   const profilesLengthRef = useRef(profiles.length);
   const [undoAvailable, setUndoAvailable] = useState(false);
+  const [shuffling, setShuffling] = useState(false);
+  const processingActionRef = useRef(false);
 
   //──────────────────────────────────────────────────────────────────
   // PRELOAD IMAGES
@@ -319,8 +322,16 @@ export function useSwipeQueue() {
   //
   //********************************************************************
   const like = useCallback(async () => {
+    // Prevent concurrent like operations
+    if (processingActionRef.current) {
+      console.warn("Like already in progress, ignoring duplicate call");
+      return;
+    }
+
     const current = profilesRef.current[0];
     if (!current) return;
+
+    processingActionRef.current = true;
 
     // Remove locally FIRST (fixes stale top)
     isSwipingRef.current = true;
@@ -363,9 +374,11 @@ export function useSwipeQueue() {
           themPhoto: current.profileImageUrl ?? current.photos?.[0] ?? null,
         } as MatchFoundState);
       }
+
+      processingActionRef.current = false;
     } catch (err) {
       console.error("like error:", err);
-      // Restore profile to queue on failure (Blocker #2)
+      // Restore profile to queue on failure - CRITICAL: Also clean up seenIds and undo stack
       const restored = [current, ...next];
       setProfiles(restored);
       setQueue(restored);
@@ -373,9 +386,21 @@ export function useSwipeQueue() {
         status: "IDLE",
         currentProfile: current,
       });
+
+      // Remove from seenIds since like failed
+      removeSeenIds([current.userUid]);
+
+      // Remove from undo stack since like never succeeded
+      const lastUndo = undoStack.current[undoStack.current.length - 1];
+      if (lastUndo?.profile.userUid === current.userUid) {
+        undoStack.current.pop();
+        setUndoAvailable(undoStack.current.length > 0);
+      }
+
+      processingActionRef.current = false;
       Alert.alert("Error", "Could not complete like. Please try again.");
     }
-  }, [addSeenIds, setQueue, myProfile]);
+  }, [addSeenIds, setQueue, myProfile, removeSeenIds]);
 
   //********************************************************************
   //
@@ -383,11 +408,20 @@ export function useSwipeQueue() {
   //
   //********************************************************************
   const undo = useCallback(async () => {
+    // Prevent concurrent undo operations
+    if (processingActionRef.current) {
+      console.warn("Undo already in progress, ignoring duplicate call");
+      return;
+    }
+
     const last = undoStack.current[undoStack.current.length - 1];
     if (!last) return;
 
+    processingActionRef.current = true;
+
     const canUndo = canUseFeature("undo");
     if (!canUndo) {
+      processingActionRef.current = false;
       if (Platform.OS === "ios") {
         Alert.alert("Get more undo tokens", "You need an undo token to continue. Purchase one now?", [
           {
@@ -400,8 +434,8 @@ export function useSwipeQueue() {
               try {
                 await purchaseFeature("undo");
                 await refreshSessionData();
-                // Try again after purchase
-                undo();
+                // Retry undo - don't call recursively, let user press again
+                Alert.alert("Success", "Undo tokens added! You can now undo.");
               } catch (err: any) {
                 Alert.alert("Purchase failed", err?.message || "Unable to complete purchase.");
               }
@@ -412,22 +446,23 @@ export function useSwipeQueue() {
       return;
     }
 
-    undoStack.current.pop();
-    setUndoAvailable(undoStack.current.length > 0);
-
     // Check tokens before allowing undo using SessionDataContext
     if (userSummary && (userSummary.undoTokens ?? 0) <= 0) {
+      processingActionRef.current = false;
       alert('Insufficient undo tokens. Please get more from Get Perks.');
-      undoStack.current.push(last); // Restore to stack
       return;
     }
+
+    // Remove from undo stack AFTER validating tokens
+    undoStack.current.pop();
+    setUndoAvailable(undoStack.current.length > 0);
 
     try {
       // Call backend to decrement token
       await apiPost('/like/undo', {});
-      
-      // Refresh session data to update token counts
-      await refreshSessionData();
+
+      // Remove from seenIds to allow the profile to appear in queue again
+      removeSeenIds([last.profile.userUid]);
 
       const list = [last.profile, ...profilesRef.current];
       profilesLengthRef.current = list.length;
@@ -439,15 +474,28 @@ export function useSwipeQueue() {
         currentProfile: last.profile,
       });
       setUndoAvailable(undoStack.current.length > 0);
+
+      // Refresh session data to update token counts (non-blocking)
+      refreshSessionData().catch((err) => {
+        console.error("Failed to refresh session data after undo:", err);
+        // Undo still succeeded, just token count might be stale
+      });
+
+      processingActionRef.current = false;
     } catch (err: any) {
+      // API call failed - restore everything
+      console.error("Undo API failed:", err);
+      undoStack.current.push(last);
+      setUndoAvailable(true);
+      processingActionRef.current = false;
+
       if (err?.message?.includes('insufficient')) {
-        alert('Insufficient undo tokens. Please upgrade to continue.');
-        undoStack.current.push(last); // Restore to stack
-        return;
+        Alert.alert('Insufficient tokens', 'You need an undo token to continue.');
+      } else {
+        Alert.alert('Error', 'Could not complete undo. Please try again.');
       }
-      // If check fails, proceed anyway (backend will validate)
     }
-  }, [userSummary, refreshSessionData, setQueue]);
+  }, [userSummary, refreshSessionData, setQueue, removeSeenIds, canUseFeature]);
 
   //********************************************************************
   //
@@ -455,12 +503,19 @@ export function useSwipeQueue() {
   //
   //********************************************************************
   const shuffle = useCallback(async () => {
-    // Clear seenIds to get fresh queue
-    clearSeen();
-    
-    // Reload queue to get fresh profiles
-    await loadQueue();
-  }, [clearSeen, loadQueue]);
+    if (shuffling) return; // Prevent multiple rapid presses
+
+    setShuffling(true);
+    try {
+      // Clear seenIds to get fresh queue
+      clearSeen();
+
+      // Reload queue to get fresh profiles
+      await loadQueue();
+    } finally {
+      setShuffling(false);
+    }
+  }, [clearSeen, loadQueue, shuffling]);
 
   //********************************************************************
   //
@@ -483,6 +538,7 @@ export function useSwipeQueue() {
     shuffle,
     reload,
     undoAvailable,
+    shuffling,
     markPendingSender: (uid: string) => {
       setPendingSenderUids((prev) => {
         const next = new Set(prev);

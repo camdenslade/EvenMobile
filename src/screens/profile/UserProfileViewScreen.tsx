@@ -256,7 +256,19 @@ export default function UserProfileViewScreen({
     requestIdRef.current += 1;
     // If preview data is provided, use it directly (no API call)
     if (previewData) {
-      setProfile(previewData as ProfileView);
+      const rawPhotos = Array.isArray(previewData.photos)
+        ? previewData.photos
+        : [];
+      const normalizedPhotos = rawPhotos.filter(
+        (ph: any) => typeof ph === "string" && ph.trim().length > 0,
+      );
+      const withFallback =
+        normalizedPhotos.length > 0
+          ? normalizedPhotos
+          : previewData.profileImageUrl
+          ? [previewData.profileImageUrl]
+          : [];
+      setProfile({ ...(previewData as ProfileView), photos: withFallback });
       setSummary(null); // No review summary for preview
       setLoading(false);
       setNotFound(false);

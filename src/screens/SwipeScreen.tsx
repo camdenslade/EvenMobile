@@ -46,6 +46,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity, Text, AccessibilityInfo, Platform, Alert, Modal, TextInput } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { hasSeenTutorial, markTutorialComplete } from "../utils/tutorialStorage";
 import type { RouteProp } from "@react-navigation/native";
 
 import { useSwipeQueue } from "../hooks/useSwipeQueue";
@@ -62,6 +63,7 @@ import type { UserProfile } from "../types/user";
 import { PurchaseOptionsModal } from "../components/PurchaseOptionsModal";
 import { FLAGGED_WORDS } from "../constants/flaggedWords";
 import type { RootStackParamList } from "../../App";
+import { TutorialOverlay } from "../components/TutorialOverlay";
 
 const MAX_MESSAGE_REQ_LEN = 240;
 
@@ -88,6 +90,7 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
     reload,
     like,
     undoAvailable,
+    shuffling,
     markPendingSender,
   } = useSwipeQueue();
 
@@ -142,6 +145,7 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
   const [confirmUndoVisible, setConfirmUndoVisible] = useState(false);
   const [confirmMessageVisible, setConfirmMessageVisible] = useState(false);
   const [messageRequestText, setMessageRequestText] = useState("Hey there!");
+  const [showTutorial, setShowTutorial] = useState(false);
 
   const swipeDeckRef = useRef<SwipeDeckRef>(null);
 
@@ -177,6 +181,21 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
       AccessibilityInfo.announceForAccessibility("No more profiles nearby. Try again later.");
     }
   }, [profiles.length, locationReady]);
+
+  // Check if user has seen tutorial - show it on first load with profiles
+  useEffect(() => {
+    if (locationReady && profiles.length > 0) {
+      (async () => {
+        const seen = await hasSeenTutorial();
+        if (!seen) {
+          // Small delay to let the screen settle before showing tutorial
+          setTimeout(() => {
+            setShowTutorial(true);
+          }, 500);
+        }
+      })();
+    }
+  }, [locationReady, profiles.length]);
 
   //********************************************************************
   //
@@ -335,6 +354,17 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
     setConfirmMessageVisible(true);
   }, [canUseMessageRequest]);
 
+  const handleTutorialComplete = useCallback(async () => {
+    await markTutorialComplete();
+    setShowTutorial(false);
+    AccessibilityInfo.announceForAccessibility("Tutorial complete. You can start swiping now!");
+  }, []);
+
+  const handleTutorialSkip = useCallback(async () => {
+    await markTutorialComplete();
+    setShowTutorial(false);
+  }, []);
+
   const onMessageRequest = useCallback(async () => {
     const target = profiles[0];
     if (!target) {
@@ -369,19 +399,37 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
         content: sanitized || "Hey there!",
       });
       if (!res) {
+        // Refresh session data even on failure - token may have been consumed
+        refreshSessionData().catch((err) => {
+          console.error("Failed to refresh session after message request:", err);
+        });
         Alert.alert(
           "Message not sent",
           "We couldn't send that request. It may have been blocked by content filters. Please try a different note."
         );
         return;
       }
-      await refreshSessionData();
+
+      // Refresh session data to update token count (non-blocking)
+      refreshSessionData().catch((err) => {
+        console.error("Failed to refresh session after message request:", err);
+        // Message request succeeded, just token count might be stale
+      });
+
       const deck = swipeDeckRef.current;
       const animateThenHandle = async () => {
         markPendingSender(target.userUid);
-        await like();
-        setConfirmMessageVisible(false);
-        navigation.navigate("Messages");
+        try {
+          await like();
+          setConfirmMessageVisible(false);
+          navigation.navigate("Messages");
+        } catch (likeError) {
+          console.error("Like failed after message request:", likeError);
+          // Message was sent successfully, but like failed
+          // Still mark as pending and navigate to messages
+          setConfirmMessageVisible(false);
+          navigation.navigate("Messages");
+        }
       };
       if (deck?.swipeUpCustom) {
         deck.swipeUpCustom(animateThenHandle);
@@ -390,6 +438,10 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
       }
     } catch (error) {
       console.error("Failed to send message request", error);
+      // Refresh session data even on error - token may have been consumed
+      refreshSessionData().catch((err) => {
+        console.error("Failed to refresh session after message request error:", err);
+      });
       Alert.alert(
         "Message request failed",
         "We couldn't send that request. Please try again with a different note."
@@ -509,22 +561,28 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
             </Text>
 
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: colors.card }]}
+              style={[styles.actionBtn, { backgroundColor: colors.card, opacity: shuffling ? 0.5 : 1 }]}
               onPress={shuffle}
+              disabled={shuffling}
               accessible={true}
-              accessibilityLabel="Shuffle queue"
+              accessibilityLabel={shuffling ? "Shuffling..." : "Shuffle queue"}
               accessibilityRole="button"
               accessibilityHint="Refreshes the profile queue to find new matches"
+              accessibilityState={{ disabled: shuffling }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text 
-                style={[styles.actionText, { color: colors.text }]}
-                allowFontScaling={true}
-                accessible={false}
-                importantForAccessibility="no"
-              >
-                Shuffle
-              </Text>
+              {shuffling ? (
+                <ActivityIndicator size="small" color={colors.text} />
+              ) : (
+                <Text
+                  style={[styles.actionText, { color: colors.text }]}
+                  allowFontScaling={true}
+                  accessible={false}
+                  importantForAccessibility="no"
+                >
+                  Shuffle
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         ) : (
@@ -570,29 +628,37 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
         animationType="fade"
         onRequestClose={() => setConfirmUndoVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.modalCenter}>
+          <View style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.subtitle }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Use an undo?</Text>
-            <Text style={[styles.modalText, { color: colors.subtitle }]}>
+            <Text style={[styles.modalSubtitle, { color: colors.subtitle }]}>
               This will consume one undo token.
             </Text>
-            <View style={styles.modalRow}>
-              <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: colors.background, borderColor: colors.subtitle + "33" }]}
-                onPress={() => setConfirmUndoVisible(false)}
-              >
-                <Text style={[styles.modalBtnText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: colors.accent }]}
-                onPress={() => {
-                  setConfirmUndoVisible(false);
-                  undo();
-                }}
-              >
-                <Text style={[styles.modalBtnText, { color: colors.buttonText }]}>Use undo</Text>
-              </TouchableOpacity>
-            </View>
+
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: colors.accent }]}
+              onPress={() => {
+                setConfirmUndoVisible(false);
+                undo();
+              }}
+              accessible={true}
+              accessibilityLabel="Use undo"
+              accessibilityRole="button"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnText, { color: colors.buttonText }]}>Use undo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalBtnOutline, { borderColor: colors.text }]}
+              onPress={() => setConfirmUndoVisible(false)}
+              accessible={true}
+              accessibilityLabel="Cancel"
+              accessibilityRole="button"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnOutlineText, { color: colors.text }]}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -603,10 +669,10 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
         animationType="fade"
         onRequestClose={() => setConfirmMessageVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.modalCenter}>
+          <View style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.subtitle }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Send message request?</Text>
-            <Text style={[styles.modalText, { color: colors.subtitle }]}>
+            <Text style={[styles.modalSubtitle, { color: colors.subtitle }]}>
               This will use one message request token.
             </Text>
             <TextInput
@@ -621,26 +687,40 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
               multiline
               maxLength={200}
             />
-            <View style={styles.modalRow}>
-              <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: colors.background, borderColor: colors.subtitle + "33" }]}
-                onPress={() => setConfirmMessageVisible(false)}
-              >
-                <Text style={[styles.modalBtnText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalBtn, { backgroundColor: colors.accent }]}
-                onPress={async () => {
-                  setConfirmMessageVisible(false);
-                  await onMessageRequest();
-                }}
-              >
-                <Text style={[styles.modalBtnText, { color: colors.buttonText }]}>Send</Text>
-              </TouchableOpacity>
-            </View>
+
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: colors.accent }]}
+              onPress={async () => {
+                setConfirmMessageVisible(false);
+                await onMessageRequest();
+              }}
+              accessible={true}
+              accessibilityLabel="Send message request"
+              accessibilityRole="button"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnText, { color: colors.buttonText }]}>Send</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalBtnOutline, { borderColor: colors.text }]}
+              onPress={() => setConfirmMessageVisible(false)}
+              accessible={true}
+              accessibilityLabel="Cancel"
+              accessibilityRole="button"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnOutlineText, { color: colors.text }]}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
+      <TutorialOverlay
+        visible={showTutorial}
+        onComplete={handleTutorialComplete}
+        onSkip={handleTutorialSkip}
+      />
     </View>
   );
 }
@@ -689,58 +769,60 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginTop: 4,
   },
-  modalOverlay: {
+  modalCenter: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
+    padding: 30,
   },
-  modalCard: {
+  modalBox: {
     width: "100%",
-    borderRadius: 8,
-    padding: 20,
+    borderRadius: 20,
+    padding: 24,
     borderWidth: 1,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 5,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "700",
-    marginBottom: 6,
+    marginBottom: 10,
   },
-  modalText: {
+  modalSubtitle: {
     fontSize: 15,
-    marginBottom: 14,
-  },
-  modalRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
+    lineHeight: 20,
+    marginBottom: 20,
   },
   modalInput: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
-    marginBottom: 12,
-    minHeight: 44,
+    marginBottom: 20,
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
   modalBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 10,
+    minHeight: Platform.OS === 'ios' ? 44 : 48,
+    justifyContent: "center",
+  },
+  modalBtnText: {
+    fontWeight: "700",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  modalBtnOutline: {
+    padding: 14,
     borderRadius: 10,
     borderWidth: 1,
     minHeight: Platform.OS === 'ios' ? 44 : 48,
     justifyContent: "center",
-    alignItems: "center",
   },
-  modalBtnText: {
-    fontWeight: "700",
-    fontSize: 15,
+  modalBtnOutlineText: {
+    fontWeight: "600",
+    textAlign: "center",
+    fontSize: 16,
   },
 });

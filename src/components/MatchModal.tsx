@@ -78,12 +78,12 @@ export function MatchModal({
       accessibilityViewIsModal={true}
     >
       <View
-        style={styles.overlay}
+        style={styles.modalCenter}
         accessible={false}
         importantForAccessibility="no"
       >
         <View
-          style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+          style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.subtitle }]}
           accessible={false}
           importantForAccessibility="no"
         >
@@ -134,7 +134,7 @@ export function MatchModal({
 
           <TouchableOpacity
             onPress={onMessage}
-            style={[styles.btnPrimary, { backgroundColor: colors.accent }]}
+            style={[styles.modalBtn, { backgroundColor: colors.accent }]}
             accessible={true}
             accessibilityLabel="Send a message"
             accessibilityRole="button"
@@ -142,7 +142,7 @@ export function MatchModal({
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Text
-              style={[styles.btnPrimaryText, { color: colors.buttonText }]}
+              style={[styles.modalBtnText, { color: colors.buttonText }]}
               allowFontScaling={true}
               accessible={false}
               importantForAccessibility="no"
@@ -153,7 +153,7 @@ export function MatchModal({
 
           <TouchableOpacity
             onPress={onClose}
-            style={[styles.btnSecondary, { backgroundColor: colors.background, borderColor: colors.border }]}
+            style={[styles.modalBtnOutline, { borderColor: colors.text }]}
             accessible={true}
             accessibilityLabel="Keep swiping"
             accessibilityRole="button"
@@ -161,7 +161,7 @@ export function MatchModal({
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Text
-              style={[styles.btnSecondaryText, { color: colors.text }]}
+              style={[styles.modalBtnOutlineText, { color: colors.text }]}
               allowFontScaling={true}
               accessible={false}
               importantForAccessibility="no"
@@ -177,19 +177,17 @@ export function MatchModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  modalCenter: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 30,
   },
 
-  card: {
+  modalBox: {
     width: '100%',
-    maxWidth: 400,
     padding: 24,
-    borderRadius: 16,
+    borderRadius: 20,
     alignItems: 'center',
     borderWidth: 1,
   },
@@ -213,25 +211,25 @@ const styles = StyleSheet.create({
     borderRadius: 55,
   },
 
-  btnPrimary: {
+  modalBtn: {
     width: '100%',
-    paddingVertical: 14,
+    padding: 14,
     borderRadius: 10,
-    marginBottom: 12,
+    marginBottom: 10,
     minHeight: Platform.OS === 'ios' ? 44 : 48,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  btnPrimaryText: {
+  modalBtnText: {
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '700',
   },
 
-  btnSecondary: {
+  modalBtnOutline: {
     width: '100%',
-    paddingVertical: 14,
+    padding: 14,
     borderRadius: 10,
     borderWidth: 1,
     minHeight: Platform.OS === 'ios' ? 44 : 48,
@@ -239,7 +237,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  btnSecondaryText: {
+  modalBtnOutlineText: {
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '600',

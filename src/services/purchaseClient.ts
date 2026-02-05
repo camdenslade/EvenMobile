@@ -15,6 +15,7 @@ const FEATURE_PRODUCTS: Record<Feature, string> = {
 let connected = false;
 let inAppPurchases: InAppPurchasesModule | null = null;
 let loadPromise: Promise<InAppPurchasesModule> | null = null;
+let listenerRegistered = false;
 
 async function loadModule() {
   if (Platform.OS !== "ios") {
@@ -57,6 +58,19 @@ async function ensureConnection() {
     }
     await InAppPurchases.connectAsync();
     connected = true;
+    if (!listenerRegistered && typeof (InAppPurchases as any).setPurchaseListener === "function") {
+      (InAppPurchases as any).setPurchaseListener(
+        ({ responseCode, results }: { responseCode?: number; results?: Purchase[] } = {}) => {
+          if (
+            responseCode === (InAppPurchases as any).IAPResponseCode?.OK &&
+            results?.length
+          ) {
+            finishTransactions(InAppPurchases, results).catch(() => {});
+          }
+        },
+      );
+      listenerRegistered = true;
+    }
   } catch (err) {
     connected = false;
     throw err;
@@ -90,6 +104,10 @@ export async function purchaseFeature(feature: Feature) {
     responseCode: number;
     results?: Purchase[];
   };
+
+  if (!response || typeof response.responseCode !== "number") {
+    throw new Error("Purchase not completed");
+  }
 
   if (response.responseCode !== InAppPurchases.IAPResponseCode.OK) {
     await finishTransactions(InAppPurchases, response.results);

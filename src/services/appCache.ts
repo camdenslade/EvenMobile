@@ -55,6 +55,7 @@ interface AppCacheState {
 
   seenIds: Set<string>;
   addSeenIds: (ids: string[]) => void;
+  removeSeenIds: (ids: string[]) => void;
   clearSeen: () => void;
 
   settings: any | null;
@@ -290,6 +291,12 @@ export const useAppCache = create<AppCacheState>((set, get) => {
       set((state) => ({
         seenIds: new Set([...state.seenIds, ...ids]),
       })),
+    removeSeenIds: (ids) =>
+      set((state) => {
+        const newSet = new Set(state.seenIds);
+        ids.forEach(id => newSet.delete(id));
+        return { seenIds: newSet };
+      }),
     clearSeen: () => set({ seenIds: new Set<string>() }),
 
     settings: null,

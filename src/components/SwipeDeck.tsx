@@ -108,12 +108,13 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
   }, []);
 
   useEffect(() => {
-    translateX.setValue(0);
-    translateY.setValue(0);
-    rotateAnim.setValue(0);
-    scaleAnim.setValue(1);
-    lastYRef.current = 0;
-    isAnimatingRef.current = false;
+    if (!isAnimatingRef.current) {
+      translateX.setValue(0);
+      translateY.setValue(0);
+      rotateAnim.setValue(0);
+      scaleAnim.setValue(1);
+      lastYRef.current = 0;
+    }
   }, [top?.id]);
 
   const rotateFromDrag = useMemo(
@@ -161,12 +162,9 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
           useNativeDriver: true,
         }).start(() => {
           onSkip();
-          translateX.setValue(0);
-          translateY.setValue(0);
-          rotateAnim.setValue(0);
-          scaleAnim.setValue(1);
-          lastYRef.current = 0;
-          isAnimatingRef.current = false;
+          setTimeout(() => {
+            isAnimatingRef.current = false;
+          }, 100);
         });
       } else {
         Animated.parallel([
@@ -184,12 +182,9 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
           }),
         ]).start(() => {
           onSkip();
-          translateX.setValue(0);
-          translateY.setValue(0);
-          rotateAnim.setValue(0);
-          scaleAnim.setValue(1);
-          lastYRef.current = 0;
-          isAnimatingRef.current = false;
+          setTimeout(() => {
+            isAnimatingRef.current = false;
+          }, 100);
         });
       }
     },
@@ -208,12 +203,9 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
           useNativeDriver: true,
         }).start(() => {
         onLike();
-        translateX.setValue(0);
-        translateY.setValue(0);
-        rotateAnim.setValue(0);
-        scaleAnim.setValue(1);
-        lastYRef.current = 0;
-          isAnimatingRef.current = false;
+          setTimeout(() => {
+            isAnimatingRef.current = false;
+          }, 100);
         });
       } else {
         Animated.parallel([
@@ -231,12 +223,9 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
         }),
       ]).start(() => {
         onLike();
-        translateX.setValue(0);
-        translateY.setValue(0);
-        rotateAnim.setValue(0);
-        scaleAnim.setValue(1);
-        lastYRef.current = 0;
-        isAnimatingRef.current = false;
+        setTimeout(() => {
+          isAnimatingRef.current = false;
+        }, 100);
       });
     }
   }, [top, reduceMotion, translateY, rotateAnim, scaleAnim, translateX, onLike]);
@@ -249,12 +238,9 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
 
       const finish = () => {
         onComplete();
-        translateX.setValue(0);
-        translateY.setValue(0);
-        rotateAnim.setValue(0);
-        scaleAnim.setValue(1);
-        lastYRef.current = 0;
-        isAnimatingRef.current = false;
+        setTimeout(() => {
+          isAnimatingRef.current = false;
+        }, 100);
       };
 
       if (reduceMotion) {

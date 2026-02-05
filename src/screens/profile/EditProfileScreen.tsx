@@ -1194,14 +1194,39 @@ export default function EditProfileScreen({
       <TouchableOpacity
         style={[styles.previewBtn, { backgroundColor: colors.card, borderColor: colors.subtitle }]}
         onPress={() => {
+          // Map photo keys to display URLs for preview
+          const previewPhotos = photos
+            .filter((p): p is string => p !== null)
+            .map((p) => {
+              // If it's already a URL or local file, use it directly
+              if (
+                p.startsWith("http://") ||
+                p.startsWith("https://") ||
+                p.startsWith("file://") ||
+                p.startsWith("ph://") ||
+                p.startsWith("data:")
+              ) {
+                return p;
+              }
+              // Otherwise, map the key to its display URL
+              return photoKeyToUrl.get(p) || "";
+            })
+            .filter((p) => Boolean(p));
+          const previewPrimary = previewPhotos[0];
+
           const previewData = {
             name,
             age,
             bio,
             interests,
-            photos: photos.filter((p): p is string => p !== null),
+            photos: previewPhotos,
+            profileImageUrl: previewPrimary,
             datingPreference,
             userUid: userUid || undefined,
+            school: school || undefined,
+            major: major || undefined,
+            gradYear: gradYear ? parseInt(gradYear, 10) : undefined,
+            showSchoolInfo,
           };
           navigation.navigate("UserProfileView", {
             userId: userUid || "",

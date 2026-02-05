@@ -861,34 +861,36 @@ export default function ReviewWriteScreen({ navigation, route }: Props) {
         accessible={true}
         accessibilityViewIsModal={true}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalBox, { backgroundColor: colors.card }]}>
+        <View style={styles.modalCenter}>
+          <View style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.subtitle }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
               Emergency Review Warning
             </Text>
-            <Text style={[styles.modalMessage, { color: colors.subtitle }]}>
+            <Text style={[styles.modalSubtitle, { color: colors.subtitle }]}>
               You only have ONE emergency review per lifetime. This cannot be undone. Are you sure you want to submit this emergency review?
             </Text>
-            <View style={styles.modalButtonsRow}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => setEmergencyConfirmVisible(false)}
-                accessible={true}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel"
-              >
-                <Text style={[styles.modalButtonText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: colors.accent }]}
-                onPress={confirmEmergency}
-                accessible={true}
-                accessibilityRole="button"
-                accessibilityLabel="Confirm emergency review"
-              >
-                <Text style={[styles.modalButtonText, { color: colors.buttonText }]}>Confirm</Text>
-              </TouchableOpacity>
-            </View>
+
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: colors.accent }]}
+              onPress={() => setEmergencyConfirmVisible(false)}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnText, { color: colors.buttonText }]}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalBtnOutline, { borderColor: colors.text }]}
+              onPress={confirmEmergency}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Confirm emergency review"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnOutlineText, { color: colors.text }]}>Confirm</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -902,34 +904,36 @@ export default function ReviewWriteScreen({ navigation, route }: Props) {
         accessible={true}
         accessibilityViewIsModal={true}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalBox, { backgroundColor: colors.card }]}>
+        <View style={styles.modalCenter}>
+          <View style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.subtitle }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
               Submit Report Review?
             </Text>
-            <Text style={[styles.modalMessage, { color: colors.subtitle }]}>
+            <Text style={[styles.modalSubtitle, { color: colors.subtitle }]}>
               This report will be reviewed by our admin team. Are you sure you want to submit this report review?
             </Text>
-            <View style={styles.modalButtonsRow}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => setReportConfirmVisible(false)}
-                accessible={true}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel"
-              >
-                <Text style={[styles.modalButtonText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: colors.accent }]}
-                onPress={confirmReport}
-                accessible={true}
-                accessibilityRole="button"
-                accessibilityLabel="Confirm report submission"
-              >
-                <Text style={[styles.modalButtonText, { color: colors.buttonText }]}>Submit</Text>
-              </TouchableOpacity>
-            </View>
+
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: colors.accent }]}
+              onPress={confirmReport}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Confirm report submission"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnText, { color: colors.buttonText }]}>Submit</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalBtnOutline, { borderColor: colors.text }]}
+              onPress={() => setReportConfirmVisible(false)}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnOutlineText, { color: colors.text }]}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -946,54 +950,56 @@ export default function ReviewWriteScreen({ navigation, route }: Props) {
         accessible={true}
         accessibilityViewIsModal={true}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalBox, { backgroundColor: colors.card }]}>
+        <View style={styles.modalCenter}>
+          <View style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.subtitle }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
               Report Submitted
             </Text>
-            <Text style={[styles.modalMessage, { color: colors.subtitle }]}>
+            <Text style={[styles.modalSubtitle, { color: colors.subtitle }]}>
               Your report has been submitted and will be reviewed by our team. Would you also like to block this user?
             </Text>
-            <View style={styles.modalButtonsRow}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => {
+
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: colors.accent }]}
+              onPress={() => {
+                setBlockAfterReportVisible(false);
+                navigation.goBack();
+              }}
+              disabled={blockingUser}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="No, don't block"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnText, { color: colors.buttonText }]}>No Thanks</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalBtnOutline, { borderColor: colors.text }, blockingUser && { opacity: 0.5 }]}
+              onPress={async () => {
+                if (!idToken || !targetId) return;
+                setBlockingUser(true);
+                try {
+                  await apiPost(`/blocks/${targetId}`, {}, idToken);
                   setBlockAfterReportVisible(false);
-                  navigation.goBack();
-                }}
-                disabled={blockingUser}
-                accessible={true}
-                accessibilityRole="button"
-                accessibilityLabel="No, don't block"
-              >
-                <Text style={[styles.modalButtonText, { color: colors.text }]}>No Thanks</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: colors.accent }, blockingUser && { opacity: 0.5 }]}
-                onPress={async () => {
-                  if (!idToken || !targetId) return;
-                  setBlockingUser(true);
-                  try {
-                    await apiPost(`/blocks/${targetId}`, {}, idToken);
-                    setBlockAfterReportVisible(false);
-                    Alert.alert("Blocked", "This user has been blocked.");
-                    navigation.navigate("Swipe", { refreshQueue: true });
-                  } catch (err: any) {
-                    Alert.alert("Error", err?.message || "Failed to block user.");
-                  } finally {
-                    setBlockingUser(false);
-                  }
-                }}
-                disabled={blockingUser}
-                accessible={true}
-                accessibilityRole="button"
-                accessibilityLabel="Block user"
-              >
-                <Text style={[styles.modalButtonText, { color: colors.buttonText }]}>
-                  {blockingUser ? "Blocking..." : "Block User"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+                  Alert.alert("Blocked", "This user has been blocked.");
+                  navigation.navigate("Swipe", { refreshQueue: true });
+                } catch (err: any) {
+                  Alert.alert("Error", err?.message || "Failed to block user.");
+                } finally {
+                  setBlockingUser(false);
+                }
+              }}
+              disabled={blockingUser}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Block user"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={[styles.modalBtnOutlineText, { color: colors.text }]}>
+                {blockingUser ? "Blocking..." : "Block User"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1179,45 +1185,51 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  modalOverlay: {
+  modalCenter: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 30,
   },
   modalBox: {
-    borderRadius: 12,
-    padding: 20,
     width: "100%",
-    maxWidth: 400,
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "700",
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  modalMessage: {
-    fontSize: 16,
+  modalSubtitle: {
+    fontSize: 15,
+    lineHeight: 20,
     marginBottom: 20,
-    lineHeight: 22,
   },
-  modalButtonsRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  modalButton: {
-    flex: 1,
+  modalBtn: {
     padding: 14,
     borderRadius: 10,
-    alignItems: "center",
+    marginBottom: 10,
+    minHeight: Platform.OS === 'ios' ? 44 : 48,
+    justifyContent: "center",
+  },
+  modalBtnText: {
+    fontWeight: "700",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  modalBtnOutline: {
+    padding: 14,
+    borderRadius: 10,
     borderWidth: 1,
     minHeight: Platform.OS === 'ios' ? 44 : 48,
     justifyContent: "center",
   },
-  modalButtonText: {
-    fontSize: 16,
+  modalBtnOutlineText: {
     fontWeight: "600",
+    textAlign: "center",
+    fontSize: 16,
   },
 });
 

@@ -26,6 +26,7 @@
 //*******************************************************************
 
 import { createContext, useContext, useState, ReactNode } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 
 interface BottomButtonsState {
   disabled: boolean;
@@ -36,18 +37,34 @@ interface BottomButtonsState {
   messageTokens?: number;
 }
 
+export interface BottomButtonLayout {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface BottomButtonsLayoutState {
+  undo?: BottomButtonLayout;
+  like?: BottomButtonLayout;
+  message?: BottomButtonLayout;
+}
+
 interface BottomButtonsContextType {
   buttonsState: BottomButtonsState | null;
   setButtonsState: (state: BottomButtonsState | null) => void;
+  buttonsLayout: BottomButtonsLayoutState;
+  setButtonsLayout: Dispatch<SetStateAction<BottomButtonsLayoutState>>;
 }
 
 const BottomButtonsContext = createContext<BottomButtonsContextType | undefined>(undefined);
 
 export function BottomButtonsProvider({ children }: { children: ReactNode }) {
   const [buttonsState, setButtonsState] = useState<BottomButtonsState | null>(null);
+  const [buttonsLayout, setButtonsLayout] = useState<BottomButtonsLayoutState>({});
 
   return (
-    <BottomButtonsContext.Provider value={{ buttonsState, setButtonsState }}>
+    <BottomButtonsContext.Provider value={{ buttonsState, setButtonsState, buttonsLayout, setButtonsLayout }}>
       {children}
     </BottomButtonsContext.Provider>
   );
