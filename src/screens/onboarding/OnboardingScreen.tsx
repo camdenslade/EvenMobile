@@ -67,6 +67,7 @@ import { HeightValue } from "../../components/HeightPicker";
 import { Step } from "./types";
 import { StepEmailGate } from "./steps/StepEmailGate";
 import { StepConsent } from "./steps/StepConsent";
+import { StepBetaWelcome } from "./steps/StepBetaWelcome";
 import { StepBasicInfo } from "./steps/StepBasicInfo";
 import { StepSexPreference } from "./steps/StepSexPreference";
 import { StepDatingPreference } from "./steps/StepDatingPreference";
@@ -369,8 +370,16 @@ export default function OnboardingScreen({
             return (
               <StepConsent
                 colors={colors}
-                onAllow={() => setStep(Step.BasicInfo)}
+                onAllow={() => setStep(Step.BetaWelcome)}
                 onDecline={exitToLogin}
+              />
+            );
+
+          case Step.BetaWelcome:
+            return (
+              <StepBetaWelcome
+                colors={colors}
+                onContinue={() => setStep(Step.BasicInfo)}
               />
             );
 

@@ -239,11 +239,8 @@ export default function MessagesScreen({
   };
 
   const renderSwipeActions = (matchId: string) => {
-    // Get opposite color of card for theme awareness
-    // Light mode: card is white (#ffffff), so use dark (#222222)
-    // Dark mode: card is dark gray (#333333), so use white (#ffffff)
-    const unmatchBgColor = isDark ? "#ffffff" : "#222222";
-    const unmatchTextColor = isDark ? "#222222" : "#ffffff";
+    const unmatchBgColor = "#d92d20";
+    const unmatchTextColor = "#ffffff";
     
     // Calculate dimensions
     const cardWidth = screenWidth - 40; // 20 padding on each side

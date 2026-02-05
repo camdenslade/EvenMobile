@@ -46,6 +46,7 @@ import {
   useImperativeHandle,
   forwardRef,
   useEffect,
+  useLayoutEffect,
   useState,
   useMemo,
   useCallback,
@@ -86,13 +87,18 @@ export interface SwipeDeckRef {
 const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
   const { profiles, onSkip, onLike, onPressProfile } = props;
 
-  const top = profiles[0] ?? null;
-  const next = profiles[1] ?? null;
+  const cleanedProfiles = useMemo(
+    () => profiles.filter((p) => Boolean(p && p.userUid)),
+    [profiles],
+  );
+  const top = cleanedProfiles[0] ?? null;
+  const next = cleanedProfiles[1] ?? null;
 
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const enterAnim = useRef(new Animated.Value(1)).current;
 
   const isAnimatingRef = useRef(false);
   const lastYRef = useRef(0);
@@ -107,14 +113,19 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
     return () => subscription?.remove();
   }, []);
 
-  useEffect(() => {
-    if (!isAnimatingRef.current) {
-      translateX.setValue(0);
-      translateY.setValue(0);
-      rotateAnim.setValue(0);
-      scaleAnim.setValue(1);
-      lastYRef.current = 0;
-    }
+  useLayoutEffect(() => {
+    translateX.setValue(0);
+    translateY.setValue(0);
+    rotateAnim.setValue(0);
+    scaleAnim.setValue(1);
+    lastYRef.current = 0;
+    enterAnim.setValue(0);
+    Animated.timing(enterAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+      easing: Easing.out(Easing.cubic),
+    }).start();
   }, [top?.id]);
 
   const rotateFromDrag = useMemo(
@@ -136,17 +147,35 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
     [rotateAnim]
   );
 
+  const enterOpacity = useMemo(
+    () => enterAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.88, 1],
+    }),
+    [enterAnim]
+  );
+
+  const enterScale = useMemo(
+    () => enterAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.92, 1],
+    }),
+    [enterAnim]
+  );
+
   const animatedStyle = useMemo(
     () => ({
+      opacity: enterOpacity,
       transform: [
         { translateX },
         { translateY },
         { rotate: rotateFromDrag },
         { rotate: rotateUp },
         { scale: scaleAnim },
+        { scale: enterScale },
       ],
     }),
-    [translateX, translateY, rotateFromDrag, rotateUp, scaleAnim]
+    [translateX, translateY, rotateFromDrag, rotateUp, scaleAnim, enterOpacity, enterScale]
   );
 
   const swipeOff = useCallback(
@@ -155,17 +184,19 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
 
       isAnimatingRef.current = true;
 
+      const resetAndSkip = () => {
+        onSkip();
+        setTimeout(() => {
+          isAnimatingRef.current = false;
+        }, 100);
+      };
+
       if (reduceMotion) {
         Animated.timing(scaleAnim, {
           toValue: 0,
           duration: 150,
           useNativeDriver: true,
-        }).start(() => {
-          onSkip();
-          setTimeout(() => {
-            isAnimatingRef.current = false;
-          }, 100);
-        });
+        }).start(resetAndSkip);
       } else {
         Animated.parallel([
           Animated.timing(translateX, {
@@ -180,12 +211,7 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
             useNativeDriver: true,
             easing: Easing.out(Easing.cubic),
           }),
-        ]).start(() => {
-          onSkip();
-          setTimeout(() => {
-            isAnimatingRef.current = false;
-          }, 100);
-        });
+        ]).start(resetAndSkip);
       }
     },
     [top, reduceMotion, translateX, translateY, scaleAnim, rotateAnim, onSkip]
@@ -196,17 +222,19 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
 
       isAnimatingRef.current = true;
 
+      const resetAndLike = () => {
+        onLike();
+        setTimeout(() => {
+          isAnimatingRef.current = false;
+        }, 100);
+      };
+
       if (reduceMotion) {
         Animated.timing(scaleAnim, {
           toValue: 0,
           duration: 150,
           useNativeDriver: true,
-        }).start(() => {
-        onLike();
-          setTimeout(() => {
-            isAnimatingRef.current = false;
-          }, 100);
-        });
+        }).start(resetAndLike);
       } else {
         Animated.parallel([
         Animated.timing(translateY, {
@@ -221,12 +249,7 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
           useNativeDriver: true,
           easing: Easing.out(Easing.cubic),
         }),
-      ]).start(() => {
-        onLike();
-        setTimeout(() => {
-          isAnimatingRef.current = false;
-        }, 100);
-      });
+      ]).start(resetAndLike);
     }
   }, [top, reduceMotion, translateY, rotateAnim, scaleAnim, translateX, onLike]);
 
@@ -382,6 +405,8 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
       },
 
       onPanResponderGrant: () => {
+        enterAnim.stopAnimation();
+        enterAnim.setValue(1);
         if (isAnimatingRef.current) {
           translateX.stopAnimation();
           translateY.stopAnimation();
@@ -441,6 +466,7 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
     >
       {next && (
         <Animated.View 
+          key={`next-${next.userUid}`}
           style={styles.nextCardWrapper}
           accessible={false}
           importantForAccessibility="no"
@@ -450,6 +476,7 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
       )}
 
       <Animated.View
+        key={`top-${top.userUid}`}
         style={[styles.cardWrapper, animatedStyle]}
         {...responder.panHandlers}
         renderToHardwareTextureAndroid

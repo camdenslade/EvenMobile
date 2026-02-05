@@ -30,15 +30,16 @@ import { HeightValue } from "../../components/HeightPicker";
 export enum Step {
   EmailGate = 0,
   Consent = 1,
-  BasicInfo = 2,
-  SexPreference = 3,
-  DatingPreference = 4,
-  Interests = 5,
-  BioAndDetails = 6,
-  Photos = 7,
-  Guidelines = 8,
-  PrivacyPolicy = 9,
-  TermsOfService = 10,
+  BetaWelcome = 2,
+  BasicInfo = 3,
+  SexPreference = 4,
+  DatingPreference = 5,
+  Interests = 6,
+  BioAndDetails = 7,
+  Photos = 8,
+  Guidelines = 9,
+  PrivacyPolicy = 10,
+  TermsOfService = 11,
 }
 
 export type SexValue = "male" | "female" | null;

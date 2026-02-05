@@ -1048,11 +1048,12 @@ const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
     paddingTop: 60,
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
   },
 
   container: {
     paddingBottom: 200,
+    paddingHorizontal: 20,
   },
 
   loadingWrap: {

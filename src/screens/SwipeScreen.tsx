@@ -44,7 +44,7 @@
 //*******************************************************************
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { View, StyleSheet, TouchableOpacity, Text, AccessibilityInfo, Platform, Alert, Modal, TextInput } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Text, AccessibilityInfo, Platform, Alert, Modal, TextInput, ActivityIndicator } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { hasSeenTutorial, markTutorialComplete } from "../utils/tutorialStorage";
 import type { RouteProp } from "@react-navigation/native";
@@ -91,6 +91,7 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
     like,
     undoAvailable,
     shuffling,
+    clearMatch,
     markPendingSender,
   } = useSwipeQueue();
 
@@ -181,6 +182,7 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
       AccessibilityInfo.announceForAccessibility("No more profiles nearby. Try again later.");
     }
   }, [profiles.length, locationReady]);
+
 
   // Check if user has seen tutorial - show it on first load with profiles
   useEffect(() => {
@@ -611,9 +613,13 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
         visible={matchOpen}
         mePhoto={matchPhotos.me}
         themPhoto={matchPhotos.them}
-        onClose={() => setMatchOpen(false)}
+        onClose={() => {
+          setMatchOpen(false);
+          clearMatch();
+        }}
         onMessage={() => {
           setMatchOpen(false);
+          clearMatch();
           if (matchId) {
             navigation.navigate("Chat", { matchId });
           } else {

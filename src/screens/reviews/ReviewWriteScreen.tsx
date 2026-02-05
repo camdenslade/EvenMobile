@@ -387,13 +387,24 @@ export default function ReviewWriteScreen({ navigation, route }: Props) {
         />
       </TouchableOpacity>
 
+      <Text
+        style={[styles.title, { color: colors.text }]}
+        accessible={true}
+        accessibilityRole="header"
+        allowFontScaling={true}
+      >
+        Write a Review
+      </Text>
+
       {targetProfile && (
         <TouchableOpacity
-          onPress={() => navigation.navigate("UserProfileView", {
-            userId: targetId,
-            targetName: targetProfile.name,
-            fromReview: true,
-          })}
+          onPress={() =>
+            navigation.navigate("UserProfileView", {
+              userId: targetId,
+              targetName: targetProfile.name,
+              fromReview: true,
+            })
+          }
           style={styles.profilePreviewBtn}
           accessibilityRole="button"
           accessibilityLabel={`View ${targetProfile.name}'s profile`}
@@ -406,15 +417,6 @@ export default function ReviewWriteScreen({ navigation, route }: Props) {
           />
         </TouchableOpacity>
       )}
-
-      <Text
-        style={[styles.title, { color: colors.text }]}
-        accessible={true}
-        accessibilityRole="header"
-        allowFontScaling={true}
-      >
-        Write a Review
-      </Text>
 
       <ScrollView
         style={styles.scrollView}
@@ -827,6 +829,11 @@ export default function ReviewWriteScreen({ navigation, route }: Props) {
                 : "All 3 normal reviews used this week"}
             </Text>
           )}
+          {type === "emergency" && (
+            <Text style={[styles.infoText, { color: colors.subtitle }]}>
+              One emergency review per lifetime.
+            </Text>
+          )}
         </>
       )}
 
@@ -1020,15 +1027,14 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   profilePreviewBtn: {
-    position: "absolute",
-    top: 50,
-    right: 20,
-    zIndex: 10,
+    alignSelf: "center",
+    marginTop: 10,
+    marginBottom: 8,
   },
   profilePreviewImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: "#333",
   },
   scrollView: {
@@ -1232,5 +1238,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-

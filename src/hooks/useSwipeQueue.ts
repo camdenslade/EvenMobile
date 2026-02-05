@@ -135,15 +135,20 @@ export function useSwipeQueue() {
   //──────────────────────────────────────────────────────────────────
   // loadQueue — fetch stable backend queue
   //──────────────────────────────────────────────────────────────────
+  const sanitizeList = useCallback(
+    (list: UserProfile[]) => list.filter((p): p is UserProfile => Boolean(p && p.userUid)),
+    [],
+  );
+
   const loadQueue = useCallback(async () => {
     setState({ status: "LOADING", targetProfileId: "" } as LoadingState);
     undoStack.current = [];
     setUndoAvailable(false);
 
-    const data = await apiGet<UserProfile[]>("/profiles/queue", idToken);
+    const data = await apiGet<UserProfile[]>("/profiles/queue", idToken ?? undefined);
     let latestBlocked = blockedUids;
     try {
-      const blockedRes = await apiGet<{ blocked: string[] }>("/blocks/me", idToken);
+      const blockedRes = await apiGet<{ blocked: string[] }>("/blocks/me", idToken ?? undefined);
       latestBlocked = new Set(blockedRes?.blocked ?? []);
       setBlockedUids(latestBlocked);
     } catch {
@@ -163,6 +168,7 @@ export function useSwipeQueue() {
           : [];
       return { ...p, photos: prefixed };
     });
+    list = sanitizeList(list);
 
     // 🔥 FRONTEND-ONLY FILTER: remove people already swiped
     list = list.filter((p) => !seenIds.has(p.userUid));
@@ -185,7 +191,7 @@ export function useSwipeQueue() {
       status: "IDLE",
       currentProfile: list[0] ?? null,
     });
-  }, [blockedUids, idToken, setQueue, preloadImages, seenIds, pendingSenderUids]);
+  }, [blockedUids, idToken, setQueue, preloadImages, seenIds, pendingSenderUids, sanitizeList]);
 
   //──────────────────────────────────────────────────────────────────
   // INITIAL MOUNT
@@ -203,6 +209,7 @@ export function useSwipeQueue() {
       if (pendingSenderUids.size > 0) {
         filtered = filtered.filter((p) => !pendingSenderUids.has(p.userUid));
       }
+      filtered = sanitizeList(filtered);
       profilesLengthRef.current = filtered.length;
       setProfiles(filtered);
       setState({
@@ -222,7 +229,7 @@ export function useSwipeQueue() {
       try {
         const pending = await apiGet<Array<{ sender: { uid: string } | null }>>(
           "/message-request/pending",
-          idToken
+          idToken ?? undefined
         );
         const uids = new Set(
           (pending || [])
@@ -241,7 +248,7 @@ export function useSwipeQueue() {
     (async () => {
       if (!idToken) return;
       try {
-        const res = await apiGet<{ blocked: string[] }>("/blocks/me", idToken);
+        const res = await apiGet<{ blocked: string[] }>("/blocks/me", idToken ?? undefined);
         if (res?.blocked) {
           setBlockedUids(new Set(res.blocked));
         }
@@ -254,7 +261,9 @@ export function useSwipeQueue() {
   // Whenever pending senders change, prune any matching profiles currently in the deck/cache
   useEffect(() => {
     if (pendingSenderUids.size === 0) return;
-    const filtered = profilesRef.current.filter((p) => !pendingSenderUids.has(p.userUid));
+    const filtered = sanitizeList(
+      profilesRef.current.filter((p) => !pendingSenderUids.has(p.userUid)),
+    );
     profilesLengthRef.current = filtered.length;
     setProfiles(filtered);
     setState((prevState) => ({
@@ -268,7 +277,9 @@ export function useSwipeQueue() {
   // Prune blocked users already in deck/cache
   useEffect(() => {
     if (blockedUids.size === 0) return;
-    const filtered = profilesRef.current.filter((p) => !blockedUids.has(p.userUid));
+    const filtered = sanitizeList(
+      profilesRef.current.filter((p) => !blockedUids.has(p.userUid)),
+    );
     profilesLengthRef.current = filtered.length;
     setProfiles(filtered);
     setState((prevState) => ({
@@ -300,7 +311,7 @@ export function useSwipeQueue() {
     undoStack.current.push({ profile: current[0] });
     setUndoAvailable(true);
 
-    const next = current.slice(1);
+    const next = sanitizeList(current.slice(1));
     profilesLengthRef.current = next.length;
 
     setProfiles(next);
@@ -341,7 +352,7 @@ export function useSwipeQueue() {
     undoStack.current.push({ profile: current });
     setUndoAvailable(true);
 
-    const next = profilesRef.current.slice(1);
+    const next = sanitizeList(profilesRef.current.slice(1));
     profilesLengthRef.current = next.length;
 
     setProfiles(next);
@@ -379,7 +390,7 @@ export function useSwipeQueue() {
     } catch (err) {
       console.error("like error:", err);
       // Restore profile to queue on failure - CRITICAL: Also clean up seenIds and undo stack
-      const restored = [current, ...next];
+      const restored = sanitizeList([current, ...next]);
       setProfiles(restored);
       setQueue(restored);
       setState({
@@ -464,7 +475,7 @@ export function useSwipeQueue() {
       // Remove from seenIds to allow the profile to appear in queue again
       removeSeenIds([last.profile.userUid]);
 
-      const list = [last.profile, ...profilesRef.current];
+      const list = sanitizeList([last.profile, ...profilesRef.current]);
       profilesLengthRef.current = list.length;
 
       setProfiles(list);
@@ -539,6 +550,12 @@ export function useSwipeQueue() {
     reload,
     undoAvailable,
     shuffling,
+    clearMatch: () => {
+      setState({
+        status: "IDLE",
+        currentProfile: profilesRef.current[0] ?? null,
+      });
+    },
     markPendingSender: (uid: string) => {
       setPendingSenderUids((prev) => {
         const next = new Set(prev);
