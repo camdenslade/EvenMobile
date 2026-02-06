@@ -15,7 +15,6 @@
       "supportsTablet": true,
       "infoPlist": {
         "CFBundleName": "Even Dating",
-        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you.",
         "SKAdNetworkItems": [
           {
             "SKAdNetworkIdentifier": "v9wttpbfk9.skadnetwork"
