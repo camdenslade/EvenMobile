@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useCallback } from "react";
+import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import {
   Modal,
   View,
@@ -8,12 +8,20 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  Linking,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { purchaseFeature } from "../services/purchaseClient";
+import {
+  purchaseFeature,
+  getProductDetails,
+  restorePurchases,
+  type Feature,
+  type ProductDetails,
+} from "../services/purchaseClient";
 import { useTheme } from "../context/ThemeProvider";
 
-type Feature = "search" | "undo" | "messageRequest" | "subscription";
+const TERMS_URL = "https://evendating.com/terms";
+const PRIVACY_URL = "https://evendating.com/privacy";
 
 interface PurchaseOptionsModalProps {
   visible: boolean;
@@ -43,10 +51,44 @@ export function PurchaseOptionsModal({
 }: PurchaseOptionsModalProps) {
   const { colors } = useTheme();
   const [loadingFeature, setLoadingFeature] = useState<Feature | null>(null);
+  const [restoringPurchases, setRestoringPurchases] = useState(false);
+  const [productPrices, setProductPrices] = useState<Map<Feature, ProductDetails>>(new Map());
+  const [pricesLoaded, setPricesLoaded] = useState(false);
 
   // Ref-based guard to prevent double-clicks before state updates
   const purchaseInFlightRef = useRef(false);
   const lastPurchaseTimeRef = useRef(0);
+
+  // Fetch product prices from StoreKit on mount
+  useEffect(() => {
+    if (visible && !pricesLoaded && Platform.OS === "ios") {
+      getProductDetails()
+        .then((prices) => {
+          setProductPrices(prices);
+          setPricesLoaded(true);
+        })
+        .catch((err) => {
+          console.warn("[PurchaseOptionsModal] Failed to fetch prices:", err);
+          setPricesLoaded(true); // Mark as loaded even on error to show fallback
+        });
+    }
+  }, [visible, pricesLoaded]);
+
+  // Helper to get price string from StoreKit or fallback
+  const getPrice = useCallback(
+    (feature: Feature, fallback: string): string => {
+      const details = productPrices.get(feature);
+      if (details?.price) {
+        // Format subscription price with /month suffix
+        if (feature === "subscription") {
+          return `${details.price}/month`;
+        }
+        return details.price;
+      }
+      return fallback;
+    },
+    [productPrices]
+  );
 
   const enabledPayments = paymentFlags?.enablePayments ?? true;
   const modalTitle =
@@ -66,14 +108,14 @@ export function PurchaseOptionsModal({
     {
       feature: "subscription",
       title: "Odd Membership",
-      subtitle: "$19.99/month",
+      subtitle: getPrice("subscription", "$19.99/month"),
       details: "Gain 3 searches, 5 undo's, and 5 message requests every month. These do not roll over.",
       enabled: enabledPayments,
     },
     {
       feature: "messageRequest",
       title: "Message Request Tokens",
-      subtitle: "$1.99",
+      subtitle: getPrice("messageRequest", "$1.99"),
       details: "1 token lets you send one message request.",
       enabled: paymentFlags?.enableMessageReqTokens ?? true,
       remaining: userSummary?.messageTokens,
@@ -81,7 +123,7 @@ export function PurchaseOptionsModal({
     {
       feature: "search",
       title: "Search Tokens",
-      subtitle: "$9.99",
+      subtitle: getPrice("search", "$9.99"),
       details: "Use a token each time you search profiles by name.",
       enabled: paymentFlags?.enableSearchTokens ?? true,
       remaining: userSummary?.searchTokens,
@@ -89,7 +131,7 @@ export function PurchaseOptionsModal({
     {
       feature: "undo",
       title: "Undo Tokens",
-      subtitle: "$1.99",
+      subtitle: getPrice("undo", "$1.99"),
       details: "Undo the most recent swipe when you need a do-over.",
       enabled: paymentFlags?.enableUndoTokens ?? true,
       remaining: userSummary?.undoTokens,
@@ -150,6 +192,38 @@ export function PurchaseOptionsModal({
     }
   }, [enabledPayments, onClose, onPurchased]);
 
+  const handleRestorePurchases = useCallback(async () => {
+    if (restoringPurchases || Platform.OS !== "ios") return;
+
+    setRestoringPurchases(true);
+    try {
+      const result = await restorePurchases();
+      if (result.restored > 0) {
+        alert(`Restored ${result.restored} purchase${result.restored > 1 ? "s" : ""}.`);
+        if (onPurchased) {
+          await onPurchased("subscription"); // Refresh user data
+        }
+        onClose();
+      } else {
+        alert("No purchases to restore.");
+      }
+    } catch (err: any) {
+      const msg = err?.message || "Unable to restore purchases. Please try again.";
+      console.warn("[restore] failed", msg);
+      alert(msg);
+    } finally {
+      setRestoringPurchases(false);
+    }
+  }, [restoringPurchases, onPurchased, onClose]);
+
+  const openTerms = useCallback(() => {
+    Linking.openURL(TERMS_URL).catch(() => {});
+  }, []);
+
+  const openPrivacy = useCallback(() => {
+    Linking.openURL(PRIVACY_URL).catch(() => {})
+  }, []);
+
   return (
     <Modal
       visible={visible}
@@ -208,6 +282,7 @@ export function PurchaseOptionsModal({
           <ScrollView showsVerticalScrollIndicator={false}>
             {displayedOptions.map((opt) => {
               const isSelected = opt.feature === initialFeature;
+              const isSubscription = opt.feature === "subscription";
               return (
                 <View
                   key={opt.feature}
@@ -227,7 +302,7 @@ export function PurchaseOptionsModal({
                         { backgroundColor: colors.accent + "22", color: colors.accent },
                       ]}
                     >
-                      {opt.feature === "subscription" ? "Best value" : "Singles"}
+                      {isSubscription ? "Best value" : "Singles"}
                     </Text>
                     {typeof opt.remaining === "number" && (
                       <Text
@@ -257,13 +332,22 @@ export function PurchaseOptionsModal({
                   >
                     {opt.details}
                   </Text>
+                  {/* Subscription disclosure - required by App Store */}
+                  {isSubscription && (
+                    <Text
+                      style={[styles.subscriptionDisclosure, { color: colors.subtitle }]}
+                      allowFontScaling={true}
+                    >
+                      Subscription automatically renews monthly unless cancelled at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account. Manage subscriptions in Settings {">"} [Your Name] {">"} Subscriptions.
+                    </Text>
+                  )}
                   <TouchableOpacity
                     style={[
                       styles.planButton,
                       { backgroundColor: colors.accent, borderColor: colors.accent },
                     ]}
                     onPress={() => handlePurchase(opt.feature)}
-                    disabled={!!loadingFeature}
+                    disabled={!!loadingFeature || restoringPurchases}
                     accessibilityRole="button"
                     accessibilityLabel={`Purchase ${opt.title}`}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -286,6 +370,39 @@ export function PurchaseOptionsModal({
                 </View>
               );
             })}
+
+            {/* Restore Purchases Button */}
+            <TouchableOpacity
+              style={[styles.restoreBtn, { borderColor: colors.border }]}
+              onPress={handleRestorePurchases}
+              disabled={restoringPurchases || !!loadingFeature}
+              accessibilityRole="button"
+              accessibilityLabel="Restore previous purchases"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              {restoringPurchases ? (
+                <ActivityIndicator color={colors.text} size="small" />
+              ) : (
+                <Text style={[styles.restoreText, { color: colors.text }]} allowFontScaling={true}>
+                  Restore Purchases
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Terms and Privacy Links - required by App Store */}
+            <View style={styles.legalLinks}>
+              <TouchableOpacity onPress={openTerms} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Text style={[styles.legalLink, { color: colors.accent }]} allowFontScaling={true}>
+                  Terms of Service
+                </Text>
+              </TouchableOpacity>
+              <Text style={[styles.legalSeparator, { color: colors.subtitle }]}> • </Text>
+              <TouchableOpacity onPress={openPrivacy} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Text style={[styles.legalLink, { color: colors.accent }]} allowFontScaling={true}>
+                  Privacy Policy
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={[styles.closeBtn, { borderColor: colors.border }]}
@@ -443,6 +560,47 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     letterSpacing: 0.3,
+  },
+
+  subscriptionDisclosure: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 10,
+    opacity: 0.7,
+  },
+
+  restoreBtn: {
+    alignSelf: "center",
+    marginTop: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderWidth: 1,
+    borderRadius: 999,
+    minWidth: 160,
+    alignItems: "center",
+  },
+
+  restoreText: {
+    fontSize: 14,
+    fontWeight: "600",
+    opacity: 0.85,
+  },
+
+  legalLinks: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+
+  legalLink: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+
+  legalSeparator: {
+    fontSize: 12,
   },
 
   closeBtn: {

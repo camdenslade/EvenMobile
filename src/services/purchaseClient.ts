@@ -1,11 +1,20 @@
 import { Platform } from "react-native";
 import { apiPost } from "./apiService";
 
-type Feature = "search" | "undo" | "messageRequest" | "subscription";
+export type Feature = "search" | "undo" | "messageRequest" | "subscription";
 type InAppPurchasesModule = typeof import("expo-in-app-purchases");
 type Purchase = any;
 
-const FEATURE_PRODUCTS: Record<Feature, string> = {
+export interface ProductDetails {
+  productId: string;
+  price: string;
+  priceAmountMicros: string;
+  priceCurrencyCode: string;
+  title: string;
+  description: string;
+}
+
+export const FEATURE_PRODUCTS: Record<Feature, string> = {
   search: "searchtoken",
   undo: "undotoken",
   messageRequest: "messagereqtoken",
@@ -90,6 +99,50 @@ async function finishTransactions(InAppPurchases: InAppPurchasesModule, purchase
   }
 }
 
+/**
+ * Fetches product details from StoreKit for displaying localized prices.
+ * Returns a map of feature -> ProductDetails.
+ */
+export async function getProductDetails(
+  features: Feature[] = ["search", "undo", "messageRequest", "subscription"]
+): Promise<Map<Feature, ProductDetails>> {
+  const result = new Map<Feature, ProductDetails>();
+
+  if (Platform.OS !== "ios") {
+    return result;
+  }
+
+  try {
+    const InAppPurchases = await ensureConnection();
+    const productIds = features.map((f) => FEATURE_PRODUCTS[f]);
+    const { results: products } = await InAppPurchases.getProductsAsync(productIds);
+
+    if (products && products.length > 0) {
+      for (const product of products) {
+        // Find which feature this product belongs to
+        const featureEntry = Object.entries(FEATURE_PRODUCTS).find(
+          ([, productId]) => productId === product.productId
+        );
+        if (featureEntry) {
+          const feature = featureEntry[0] as Feature;
+          result.set(feature, {
+            productId: product.productId,
+            price: String(product.price),
+            priceAmountMicros: String(product.priceAmountMicros || "0"),
+            priceCurrencyCode: product.priceCurrencyCode || "USD",
+            title: product.title || "",
+            description: product.description || "",
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[getProductDetails] Failed to fetch products:", err);
+  }
+
+  return result;
+}
+
 export async function purchaseFeature(feature: Feature) {
   const InAppPurchases = await ensureConnection();
   const productId = FEATURE_PRODUCTS[feature];
@@ -141,4 +194,53 @@ export async function purchaseFeature(feature: Feature) {
   if (verified) {
     await finishTransactions(InAppPurchases, response.results);
   }
+}
+
+/**
+ * Restores previous purchases from the App Store.
+ * This fetches the user's purchase history from Apple and restores
+ * any active subscriptions or unused consumables.
+ */
+export async function restorePurchases(): Promise<{ restored: number }> {
+  if (Platform.OS !== "ios") {
+    throw new Error("Restore purchases is only supported on iOS.");
+  }
+
+  const InAppPurchases = await ensureConnection();
+
+  // Get purchase history from Apple
+  const { results: history } = await (InAppPurchases as any).getPurchaseHistoryAsync();
+
+  if (!history || history.length === 0) {
+    return { restored: 0 };
+  }
+
+  let restoredCount = 0;
+
+  for (const purchase of history) {
+    const receipt = purchase.transactionReceipt;
+    if (!receipt) continue;
+
+    try {
+      const result = await apiPost("/purchases/restore", {
+        platform: "ios",
+        receipt,
+      });
+
+      if (result && Array.isArray(result) && result.length > 0) {
+        restoredCount += result.length;
+      }
+    } catch (err) {
+      console.warn("[restorePurchases] Failed to restore purchase:", err);
+    }
+
+    // Finish the transaction
+    try {
+      await InAppPurchases.finishTransactionAsync(purchase, false);
+    } catch (err) {
+      console.warn("[restorePurchases] Failed to finish transaction:", err);
+    }
+  }
+
+  return { restored: restoredCount };
 }

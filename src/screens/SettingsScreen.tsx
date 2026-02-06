@@ -57,6 +57,7 @@ import {
   Platform,
   RefreshControl,
   Alert,
+  Linking,
 } from "react-native";
 
 import { apiGet, apiPost, apiPatch, apiDelete } from "../services/apiService";
@@ -1778,8 +1779,62 @@ export default function SettingsScreen({
           </Text>
         </TouchableOpacity>
 
+        {/* MANAGE SUBSCRIPTION - Required by App Store Guidelines 3.1.1 */}
+        {userSummary?.isSubscribed && (
+          <>
+            <Text
+              style={[styles.sectionTitle, { color: colors.text }]}
+              accessible={true}
+              accessibilityRole="header"
+              allowFontScaling={true}
+            >
+              Subscription
+            </Text>
+            <Text
+              style={[styles.description, { color: colors.subtitle }]}
+              accessible={true}
+              accessibilityRole="text"
+              allowFontScaling={true}
+            >
+              You have an active Odd Membership. Manage or cancel your subscription through your Apple ID settings.
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.manageSubscriptionBtn,
+                styles.surfaceShadow,
+                { backgroundColor: colors.card, borderColor: colors.accent },
+              ]}
+              onPress={() => {
+                // Opens Apple's subscription management page
+                Linking.openURL("https://apps.apple.com/account/subscriptions").catch(() => {
+                  Alert.alert(
+                    "Unable to Open",
+                    "Please go to Settings > [Your Name] > Subscriptions to manage your subscription.",
+                    [{ text: "OK" }]
+                  );
+                });
+              }}
+              accessible={true}
+              accessibilityLabel="Manage Subscription"
+              accessibilityRole="button"
+              accessibilityHint="Opens Apple subscription management to view, modify, or cancel your subscription"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="card-outline" size={18} color={colors.accent} style={{ marginRight: 8 }} />
+              <Text
+                style={[styles.manageSubscriptionText, { color: colors.accent }]}
+                allowFontScaling={true}
+                accessible={false}
+                importantForAccessibility="no"
+              >
+                Manage Subscription
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+
         {/* DELETE ACCOUNT */}
-        <Text 
+        <Text
           style={[styles.sectionTitle, { color: colors.text }]}
           accessible={true}
           accessibilityRole="header"
@@ -2084,7 +2139,7 @@ export default function SettingsScreen({
             >
               Delete Account?
             </Text>
-            <Text 
+            <Text
               style={[styles.modalMessage, { color: colors.subtitle }]}
               accessible={true}
               accessibilityRole="alert"
@@ -2092,6 +2147,26 @@ export default function SettingsScreen({
             >
               Choose how you want to remove your account.
             </Text>
+
+            {/* Subscription warning - GDPR/App Store compliance */}
+            {userSummary?.isSubscribed && (
+              <View
+                style={[
+                  styles.subscriptionWarning,
+                  { backgroundColor: isDark ? "rgba(255,165,0,0.15)" : "#fff8e6", borderColor: "#f5a623" },
+                ]}
+                accessible={true}
+                accessibilityRole="alert"
+              >
+                <Ionicons name="warning-outline" size={18} color="#f5a623" style={{ marginRight: 8 }} />
+                <Text
+                  style={[styles.subscriptionWarningText, { color: isDark ? "#ffb74d" : "#996300" }]}
+                  allowFontScaling={true}
+                >
+                  You have an active subscription. Deleting your account will NOT cancel your subscription. Please cancel it first in Settings {">"} [Your Name] {">"} Subscriptions, or you will continue to be charged.
+                </Text>
+              </View>
+            )}
 
             <TouchableOpacity
               style={[
@@ -2568,6 +2643,22 @@ const styles = StyleSheet.create({
   },
   pauseText: { textAlign: "center", fontWeight: "600" },
 
+  // Manage Subscription
+  manageSubscriptionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 30,
+    minHeight: Platform.OS === "ios" ? 44 : 48,
+  },
+  manageSubscriptionText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
   // Feedback & Support
   feedbackBtn: {
     flexDirection: "row",
@@ -2708,6 +2799,20 @@ const styles = StyleSheet.create({
   modalMessage: {
     fontSize: 15,
     marginBottom: 20,
+  },
+
+  subscriptionWarning: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  subscriptionWarningText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
   },
 
   modalButtonsRow: {
