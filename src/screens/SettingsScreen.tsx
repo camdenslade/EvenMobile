@@ -173,10 +173,6 @@ export default function SettingsScreen({
   }, [activeCustomKey, customDraft]);
 
   // Memoize gradient arrays to prevent unnecessary recalculations
-  const hueGradient = useMemo(
-    () => ['#ff0000', '#ff00ff', '#0000ff', '#00ffff', '#00ff00', '#ffff00', '#ff0000'],
-    []
-  );
 
   const saturationGradient = useMemo(
     () => [
@@ -228,6 +224,7 @@ export default function SettingsScreen({
         border: seed.border,
         circle: seed.circle,
         shapeRect: seed.shapeRect,
+        shuffleBtn: seed.shuffleBtn,
       });
       setActiveCustomKey("background");
       setCustomError(null);
@@ -1037,29 +1034,12 @@ export default function SettingsScreen({
                           {activeCustomLabel}
                         </Text>
                         <Text style={[styles.customSelectedHint, { color: colors.subtitle }]}>
-                          Use the hue slider and controls to fine-tune.
+                          Use the sliders to fine-tune.
                         </Text>
                       </View>
                     </View>
 
-                    <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
-                      <Slider
-                        value={hsvState.h}
-                        onValueChange={(h) => {
-                          const newHsv = { ...hsvState, h };
-                          setHsvState(newHsv);
-                          updateCustomColor(fromHsv(newHsv));
-                        }}
-                        min={0}
-                        max={360}
-                        step={1}
-                        label="Hue"
-                        formatValue={(v) => `${Math.round(v)}°`}
-                        gradient={hueGradient}
-                      />
-                    </View>
-
-                    {/* Saturation and Brightness sliders */}
+                    {/* Color and Brightness sliders */}
                     <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
                       <Slider
                         value={hsvState.s * 100}

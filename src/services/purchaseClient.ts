@@ -1,5 +1,29 @@
 import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiPost } from "./apiService";
+
+const PENDING_RECEIPT_KEY = "@EvenApp:pendingPurchaseReceipt";
+
+export async function getPendingReceipt(): Promise<{ receipt: string; platform: string } | null> {
+  try {
+    const raw = await AsyncStorage.getItem(PENDING_RECEIPT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function clearPendingReceipt(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(PENDING_RECEIPT_KEY);
+  } catch {}
+}
+
+async function savePendingReceipt(receipt: string, platform: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(PENDING_RECEIPT_KEY, JSON.stringify({ receipt, platform }));
+  } catch {}
+}
 
 export type Feature = "search" | "undo" | "messageRequest" | "subscription";
 type InAppPurchasesModule = typeof import("expo-in-app-purchases");
@@ -24,7 +48,9 @@ export const FEATURE_PRODUCTS: Record<Feature, string> = {
 let connected = false;
 let inAppPurchases: InAppPurchasesModule | null = null;
 let loadPromise: Promise<InAppPurchasesModule> | null = null;
+let connectionPromise: Promise<InAppPurchasesModule> | null = null;
 let listenerRegistered = false;
+let purchaseInProgress: Promise<void> | null = null;
 
 async function loadModule() {
   if (Platform.OS !== "ios") {
@@ -61,11 +87,26 @@ async function ensureConnection() {
 
   if (connected) return InAppPurchases;
 
-  try {
-    if (typeof InAppPurchases.connectAsync !== "function") {
-      throw new Error("In-app purchases are not available in this build (missing native module).");
+  // Prevent concurrent connection attempts
+  if (connectionPromise) {
+    return connectionPromise;
+  }
+
+  connectionPromise = (async () => {
+    try {
+      if (typeof InAppPurchases.connectAsync !== "function") {
+        throw new Error("In-app purchases are not available in this build (missing native module).");
+      }
+      await InAppPurchases.connectAsync();
+    } catch (err) {
+      // "Already connected" is not a real error - treat it as success
+      const message = err instanceof Error ? err.message : String(err);
+      if (!message.includes("Already connected")) {
+        connected = false;
+        connectionPromise = null;
+        throw err;
+      }
     }
-    await InAppPurchases.connectAsync();
     connected = true;
     if (!listenerRegistered && typeof (InAppPurchases as any).setPurchaseListener === "function") {
       (InAppPurchases as any).setPurchaseListener(
@@ -80,12 +121,10 @@ async function ensureConnection() {
       );
       listenerRegistered = true;
     }
-  } catch (err) {
-    connected = false;
-    throw err;
-  }
+    return InAppPurchases;
+  })();
 
-  return InAppPurchases;
+  return connectionPromise;
 }
 
 async function finishTransactions(InAppPurchases: InAppPurchasesModule, purchases?: Purchase[]) {
@@ -144,55 +183,80 @@ export async function getProductDetails(
 }
 
 export async function purchaseFeature(feature: Feature) {
-  const InAppPurchases = await ensureConnection();
-  const productId = FEATURE_PRODUCTS[feature];
-
-  // Fetch product details to ensure availability
-  const { results: products } = await InAppPurchases.getProductsAsync([productId]);
-  if (!products || !products.find((p) => p.productId === productId)) {
-    throw new Error("Product unavailable");
+  // Prevent concurrent purchase attempts - the native module doesn't allow it
+  if (purchaseInProgress) {
+    throw new Error("A purchase is already in progress. Please wait.");
   }
 
-  const response = (await InAppPurchases.purchaseItemAsync(productId) as unknown) as {
-    responseCode: number;
-    results?: Purchase[];
-  };
+  const doPurchase = async () => {
+    const InAppPurchases = await ensureConnection();
+    const productId = FEATURE_PRODUCTS[feature];
 
-  if (!response || typeof response.responseCode !== "number") {
-    throw new Error("Purchase not completed");
-  }
-
-  if (response.responseCode !== InAppPurchases.IAPResponseCode.OK) {
-    await finishTransactions(InAppPurchases, response.results);
-    throw new Error("Purchase not completed");
-  }
-
-  const receipt = response.results?.[0]?.transactionReceipt;
-  if (!receipt) {
-    await finishTransactions(InAppPurchases, response.results);
-    throw new Error("Missing receipt");
-  }
-
-  let verified = false;
-
-  try {
-    const verifyResult = await apiPost("/purchases/verify", {
-      platform: "ios",
-      receipt,
-    });
-
-    if (!verifyResult) {
-      throw new Error("Purchase verification failed. Please contact support.");
+    // Fetch product details to ensure availability
+    const { results: products } = await InAppPurchases.getProductsAsync([productId]);
+    if (!products || !products.find((p) => p.productId === productId)) {
+      throw new Error("Product unavailable");
     }
 
-    verified = true;
-  } catch (err) {
-    console.error("Purchase verification failed:", err);
-    throw err;
-  }
+    const response = (await InAppPurchases.purchaseItemAsync(productId) as unknown) as {
+      responseCode: number;
+      results?: Purchase[];
+    };
 
-  if (verified) {
-    await finishTransactions(InAppPurchases, response.results);
+    if (!response || typeof response.responseCode !== "number") {
+      throw new Error("Purchase not completed");
+    }
+
+    if (response.responseCode !== InAppPurchases.IAPResponseCode.OK) {
+      await finishTransactions(InAppPurchases, response.results);
+      throw new Error("Purchase not completed");
+    }
+
+    const purchase = response.results?.[0];
+    if (!purchase?.transactionId || !purchase?.productId) {
+      await finishTransactions(InAppPurchases, response.results);
+      throw new Error("Missing receipt");
+    }
+    const receipt = JSON.stringify({
+      transactionId: purchase.transactionId,
+      productId: purchase.productId,
+    });
+
+    let verified = false;
+
+    try {
+      const verifyResult = await apiPost("/purchases/verify", {
+        platform: "ios",
+        receipt,
+      });
+
+      if (!verifyResult) {
+        throw new Error("Purchase verification failed. Please contact support.");
+      }
+
+      verified = true;
+    } catch (err: any) {
+      // If user is not authenticated yet (e.g. purchasing from login screen),
+      // save the receipt and verify it after they sign in.
+      if (err?.message === "Missing auth token") {
+        await savePendingReceipt(receipt, "ios");
+        verified = true; // Apple has processed the payment; verification is deferred
+      } else {
+        console.error("Purchase verification failed:", err);
+        throw err;
+      }
+    }
+
+    if (verified) {
+      await finishTransactions(InAppPurchases, response.results);
+    }
+  };
+
+  purchaseInProgress = doPurchase();
+  try {
+    await purchaseInProgress;
+  } finally {
+    purchaseInProgress = null;
   }
 }
 
@@ -218,8 +282,11 @@ export async function restorePurchases(): Promise<{ restored: number }> {
   let restoredCount = 0;
 
   for (const purchase of history) {
-    const receipt = purchase.transactionReceipt;
-    if (!receipt) continue;
+    if (!purchase?.transactionId || !purchase?.productId) continue;
+    const receipt = JSON.stringify({
+      transactionId: purchase.transactionId,
+      productId: purchase.productId,
+    });
 
     try {
       const result = await apiPost("/purchases/restore", {

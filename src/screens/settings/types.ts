@@ -9,6 +9,7 @@ export type CustomThemeDraft = {
   border: string;
   circle: string;
   shapeRect: string;
+  shuffleBtn: string;
 };
 
 export type ThemePreset = {
@@ -35,6 +36,7 @@ export const THEME_COLOR_KEYS: Array<keyof ThemeColors> = [
   "border",
   "bottomButton",
   "bottomButtonIcon",
+  "shuffleBtn",
 ];
 
 export const CUSTOM_FIELDS: Array<{ key: keyof CustomThemeDraft; label: string }> = [
@@ -46,24 +48,25 @@ export const CUSTOM_FIELDS: Array<{ key: keyof CustomThemeDraft; label: string }
   { key: "border", label: "Dividers & Borders" },
   { key: "circle", label: "Circle Shape" },
   { key: "shapeRect", label: "Rectangle Shape" },
+  { key: "shuffleBtn", label: "Shuffle Button" },
 ];
 
 export const ALLOWED_SCHOOL_DOMAINS = [
   "missouristate.edu",
-  "drury.edu",
-  "evangel.edu",
-  "otc.edu",
-  "mission.edu",
-  "sbuniv.edu",
+  // "drury.edu",     // fall release
+  // "evangel.edu",  // fall release
+  // "otc.edu",      // fall release
+  // "mission.edu",  // fall release
+  // "sbuniv.edu",   // fall release
 ];
 
 export const SCHOOL_DOMAIN_MAP: Record<string, string> = {
   "missouristate.edu": "Missouri State University",
-  "drury.edu": "Drury University",
-  "evangel.edu": "Evangel University",
-  "otc.edu": "Ozarks Technical College",
-  "mission.edu": "Mission University",
-  "sbuniv.edu": "Southern Baptist University",
+  // "drury.edu": "Drury University",                   // fall release
+  // "evangel.edu": "Evangel University",               // fall release
+  // "otc.edu": "Ozarks Technical College",             // fall release
+  // "mission.edu": "Mission University",               // fall release
+  // "sbuniv.edu": "Southern Baptist University",       // fall release
 };
 
 export const DANGER_COLOR = "#E5484D";

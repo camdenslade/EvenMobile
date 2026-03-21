@@ -57,20 +57,17 @@ import {
   PanResponder,
   Animated,
   Easing,
-  Dimensions,
   TouchableOpacity,
   Text,
   AccessibilityInfo,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 
 import type { UserProfile } from "../types/user";
 import { SwipeCard } from "./SwipeCard";
+import { getSwipeCardDimensions } from "../utils/responsive";
 
-const { width, height } = Dimensions.get("window");
-
-const CARD_WIDTH = width * 0.88;
-const CARD_HEIGHT = height * 0.68;
 
 interface Props {
   profiles: UserProfile[];
@@ -86,6 +83,13 @@ export interface SwipeDeckRef {
 
 const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
   const { profiles, onSkip, onLike, onPressProfile } = props;
+
+  // Responsive card dimensions
+  const { width, height } = useWindowDimensions();
+  const { width: CARD_WIDTH, height: CARD_HEIGHT } = useMemo(
+    () => getSwipeCardDimensions(width, height),
+    [width, height]
+  );
 
   const cleanedProfiles = useMemo(
     () => profiles.filter((p) => Boolean(p && p.userUid)),
@@ -465,9 +469,9 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
       importantForAccessibility="no"
     >
       {next && (
-        <Animated.View 
+        <Animated.View
           key={`next-${next.userUid}`}
-          style={styles.nextCardWrapper}
+          style={[styles.nextCardWrapper, { width: CARD_WIDTH, height: CARD_HEIGHT }]}
           accessible={false}
           importantForAccessibility="no"
         >
@@ -477,7 +481,7 @@ const SwipeDeckComponent = forwardRef<SwipeDeckRef, Props>((props, ref) => {
 
       <Animated.View
         key={`top-${top.userUid}`}
-        style={[styles.cardWrapper, animatedStyle]}
+        style={[styles.cardWrapper, { width: CARD_WIDTH, height: CARD_HEIGHT }, animatedStyle]}
         {...responder.panHandlers}
         renderToHardwareTextureAndroid
         shouldRasterizeIOS
@@ -539,15 +543,11 @@ const styles = StyleSheet.create({
     pointerEvents: "box-none",
   },
   cardWrapper: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
     position: "absolute",
     top: 58,
     zIndex: 10,
   },
   nextCardWrapper: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
     position: "absolute",
     top: 40,
     opacity: 0.88,

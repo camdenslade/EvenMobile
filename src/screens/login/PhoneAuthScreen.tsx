@@ -153,7 +153,25 @@ export default function PhoneAuthScreen(): React.ReactElement {
       const e164 = buildE164();
       await verifyPhoneCode({ phoneNumber: e164, code: verificationCode, session });
     } catch (err: any) {
-      setLocalError(err?.message ?? "Verification failed");
+      const msg: string = err?.message ?? "Verification failed";
+      setVerificationCode("");
+      // Session expired or invalid after wrong code — let them request a new one immediately
+      const sessionExpired =
+        msg.toLowerCase().includes("session") ||
+        msg.toLowerCase().includes("expired") ||
+        msg.toLowerCase().includes("not authorized") ||
+        msg.toLowerCase().includes("invalid");
+      if (sessionExpired) {
+        setSession(null);
+        setResendTimer(0);
+        if (resendTimerRef.current) {
+          clearInterval(resendTimerRef.current);
+          resendTimerRef.current = null;
+        }
+        setLocalError("That code didn't work. Tap 'Resend Code' to get a new one.");
+      } else {
+        setLocalError(msg);
+      }
       setFlowState("INPUT_CODE");
     } finally {
       setPending(false);

@@ -303,7 +303,8 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
   );
 
   const { setButtonsState } = useBottomButtons();
-  const { userSummary, paymentFlags, userFlags, refreshSessionData } = useSessionData();
+  const { userSummary, paymentFlags, userFlags, refreshSessionData, profileStatus } = useSessionData();
+  const [resuming, setResuming] = useState(false);
 
   const canUseMessageRequest = useCallback(() => {
     const pf = paymentFlags || {
@@ -355,6 +356,19 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
     }
     setConfirmMessageVisible(true);
   }, [canUseMessageRequest]);
+
+  const handleResume = useCallback(async () => {
+    setResuming(true);
+    try {
+      await apiPost("/profiles/me/unpause", {});
+      await refreshSessionData();
+      await reload();
+    } catch (err) {
+      Alert.alert("Error", "Could not resume your profile. Please try again.");
+    } finally {
+      setResuming(false);
+    }
+  }, [refreshSessionData, reload]);
 
   const handleTutorialComplete = useCallback(async () => {
     await markTutorialComplete();
@@ -489,7 +503,28 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
         accessible={false}
         importantForAccessibility="no"
       >
-        {!locationReady ? (
+        {profileStatus?.paused ? (
+          <View style={styles.centerBox} accessible={true} accessibilityRole="alert">
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Your profile is paused</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.subtitle }]}>
+              Resume your profile to start appearing to others and see new matches.
+            </Text>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: colors.accent, opacity: resuming ? 0.5 : 1 }]}
+              onPress={handleResume}
+              disabled={resuming}
+              accessible={true}
+              accessibilityLabel="Resume profile"
+              accessibilityRole="button"
+            >
+              {resuming ? (
+                <ActivityIndicator size="small" color={colors.buttonText} />
+              ) : (
+                <Text style={[styles.actionText, { color: colors.buttonText }]}>Resume</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : !locationReady ? (
           <View 
             style={styles.centerBox}
             accessible={true}
@@ -563,7 +598,7 @@ export default function SwipeScreen({ navigation, route, __prerender }: SwipeScr
             </Text>
 
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: colors.card, opacity: shuffling ? 0.5 : 1 }]}
+              style={[styles.actionBtn, { backgroundColor: colors.shuffleBtn, opacity: shuffling ? 0.5 : 1 }]}
               onPress={shuffle}
               disabled={shuffling}
               accessible={true}

@@ -40,6 +40,7 @@ import {
   ScrollView,
   Linking,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -47,6 +48,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeProvider";
 import GlobalBackground from "../../components/GlobalBackground";
 import { AppImage } from "../../components/AppImage";
+import { isTablet, getResponsivePadding, MAX_CONTENT_WIDTH } from "../../utils/responsive";
+import { PurchaseOptionsModal } from "../../components/PurchaseOptionsModal";
 
 import { TERMS_OF_SERVICE } from "../legal/terms";
 import { PRIVACY_POLICY } from "../legal/privacy";
@@ -308,13 +311,20 @@ function LegalModal({
 export default function LoginScreen(): React.ReactElement {
   const navigation = useNavigation<any>();
   const { colors, isDark, mode } = useTheme();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const [showOptions, setShowOptions] = useState(false);
 
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showCookies, setShowCookies] = useState(false);
-  const [showSearchConfirm, setShowSearchConfirm] = useState(false);
+  const [showBuyTokens, setShowBuyTokens] = useState(false);
+
+  // Responsive layout
+  const tablet = isTablet();
+  const responsivePadding = getResponsivePadding();
+  const logoTop = tablet ? screenHeight * 0.12 : 100;
+  const textTop = tablet ? screenHeight * 0.12 + 100 : 200;
 
   //********************************************************************
   //
@@ -418,20 +428,21 @@ export default function LoginScreen(): React.ReactElement {
 
   if (showOptions) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background, paddingHorizontal: responsivePadding }]}>
         <GlobalBackground />
 
-        <AppImage 
-          source={APP_LOGO} 
-          style={[styles.logoImage, !isDark && { tintColor: '#000000' }]} 
-          contentFit="contain" 
+        <AppImage
+          source={APP_LOGO}
+          style={[styles.logoImage, { top: logoTop }, !isDark && { tintColor: '#000000' }]}
+          contentFit="contain"
         />
-        <Text style={[styles.logoText, { color: colors.text }]}>Even Dating</Text>
+        <Text style={[styles.logoText, { color: colors.text, top: textTop }]}>Even Dating</Text>
 
-        <View style={styles.policyTextWrapper}>{PolicyText}</View>
+        <View style={[styles.buttonContainer, tablet && styles.buttonContainerTablet]}>
+          <View style={styles.policyTextWrapper}>{PolicyText}</View>
 
-        {Platform.OS === 'android' && (
-          <SocialButton
+          {Platform.OS === 'android' && (
+            <SocialButton
             iconName="logo-google"
             title="Sign in with Google"
             onPress={() => handleSocialLogin("Google")}
@@ -465,24 +476,25 @@ export default function LoginScreen(): React.ReactElement {
             borderColor={colors.border}
           />
 
-        <TouchableOpacity
-          style={styles.troubleButton}
-          onPress={handleTroubleSigningIn}
-          accessible={true}
-          accessibilityLabel="Trouble signing in"
-          accessibilityRole="button"
-          accessibilityHint="Opens email to contact support"
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text 
-            style={[styles.troubleText, { color: colors.text }]}
-            allowFontScaling={true}
-            accessible={false}
-            importantForAccessibility="no"
+          <TouchableOpacity
+            style={styles.troubleButton}
+            onPress={handleTroubleSigningIn}
+            accessible={true}
+            accessibilityLabel="Trouble signing in"
+            accessibilityRole="button"
+            accessibilityHint="Opens email to contact support"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            Trouble signing in?
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[styles.troubleText, { color: colors.text }]}
+              allowFontScaling={true}
+              accessible={false}
+              importantForAccessibility="no"
+            >
+              Trouble signing in?
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           onPress={() => setShowOptions(false)}
@@ -530,18 +542,18 @@ export default function LoginScreen(): React.ReactElement {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingHorizontal: responsivePadding }]}>
       <GlobalBackground />
 
-      <AppImage 
-        source={APP_LOGO} 
-        style={[styles.logoImage, !isDark && { tintColor: '#000000' }]} 
+      <AppImage
+        source={APP_LOGO}
+        style={[styles.logoImage, { top: logoTop }, !isDark && { tintColor: '#000000' }]}
         contentFit="contain"
         accessibilityLabel="Even Dating logo"
         accessibilityRole="image"
       />
-      <Text 
-        style={[styles.logoText, { color: colors.text }]}
+      <Text
+        style={[styles.logoText, { color: colors.text, top: textTop }]}
         accessible={true}
         accessibilityRole="header"
         allowFontScaling={true}
@@ -549,36 +561,38 @@ export default function LoginScreen(): React.ReactElement {
         Even Dating
       </Text>
 
-      <View style={styles.policyTextWrapper}>{PolicyText}</View>
+      <View style={[styles.buttonContainer, tablet && styles.buttonContainerTablet]}>
+        <View style={styles.policyTextWrapper}>{PolicyText}</View>
 
-      <PrimaryActionButton
-        title="Create Account"
-        onPress={() => handleSocialLogin("Phone")}
-        colors={colors}
-      />
+        <PrimaryActionButton
+          title="Create Account"
+          onPress={() => handleSocialLogin("Phone")}
+          colors={colors}
+        />
 
-  <PrimaryActionButton
-    title="Sign In"
-    onPress={() => setShowOptions(true)}
-    inverted
-    colors={colors}
-  />
+        <PrimaryActionButton
+          title="Sign In"
+          onPress={() => setShowOptions(true)}
+          inverted
+          colors={colors}
+        />
 
-  <PrimaryActionButton
-    title="Search Nearby"
-    onPress={() => setShowSearchConfirm(true)}
-    inverted
-    colors={colors}
-  />
+        <PrimaryActionButton
+          title="Search Nearby"
+          onPress={() => setShowBuyTokens(true)}
+          inverted
+          colors={colors}
+        />
 
-      <TouchableOpacity
-        style={styles.troubleButton}
-        onPress={handleTroubleSigningIn}
-      >
-        <Text style={[styles.troubleText, { color: colors.text }]}>
-          Trouble signing in?
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.troubleButton}
+          onPress={handleTroubleSigningIn}
+        >
+          <Text style={[styles.troubleText, { color: colors.text }]}>
+            Trouble signing in?
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <LegalModal
         visible={showTerms}
@@ -604,36 +618,16 @@ export default function LoginScreen(): React.ReactElement {
         colors={colors}
       />
 
-      <Modal
-        transparent
-        visible={showSearchConfirm}
-        animationType="fade"
-        onRequestClose={() => setShowSearchConfirm(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalBox, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Open Search?</Text>
-            <Text style={[styles.modalText, { color: colors.subtitle }]}>
-              Continue to Search. A token is only used when you actually run a search.
-            </Text>
-            <TouchableOpacity
-              style={[styles.modalCloseButton, { backgroundColor: colors.background }]}
-              onPress={() => setShowSearchConfirm(false)}
-            >
-              <Text style={[styles.modalCloseText, { color: colors.text }]}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalCloseButton, { backgroundColor: colors.accent }]}
-              onPress={() => {
-                setShowSearchConfirm(false);
-                navigation.navigate("Search");
-              }}
-            >
-              <Text style={[styles.modalCloseText, { color: colors.buttonText }]}>Continue</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <PurchaseOptionsModal
+        visible={showBuyTokens}
+        onClose={() => setShowBuyTokens(false)}
+        initialFeature="search"
+        onPurchased={() => {
+          setShowBuyTokens(false);
+          navigation.navigate("Search");
+        }}
+      />
+
     </View>
   );
 }
@@ -641,17 +635,24 @@ export default function LoginScreen(): React.ReactElement {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 30,
     justifyContent: "flex-end",
     paddingBottom: 60,
     position: "relative",
+  },
+
+  buttonContainer: {
+    width: "100%",
+  },
+
+  buttonContainerTablet: {
+    maxWidth: MAX_CONTENT_WIDTH.narrow,
+    alignSelf: "center",
   },
 
   logoImage: {
     width: 250,
     height: 80,
     position: "absolute",
-    top: 100,
     alignSelf: "center",
     zIndex: 1,
   },
@@ -661,7 +662,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     position: "absolute",
-    top: 200,
     alignSelf: "center",
     zIndex: 1,
   },
@@ -740,10 +740,13 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
+    alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.5)",
   },
 
   modalBox: {
+    width: "100%",
+    maxWidth: 600,
     padding: 20,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,

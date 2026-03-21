@@ -12,10 +12,21 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.evendating.us/api",
+        "EXPO_PUBLIC_COGNITO_APP_CLIENT_ID": "5lrc95oj9tqvop8ei56cq4q689",
+        "EXPO_PUBLIC_WEB_ID": "801278672018-rkr5mlhs0si9astnh7do8els2mpmu9dk.apps.googleusercontent.com",
+        "EXPO_PUBLIC_ANDROID_ID": "801278672018-2ls218i3d8rs2r7l32h6h8sfp88a16va.apps.googleusercontent.com",
+        "EXPO_PUBLIC_IOS_ID": "801278672018-a6m7ukaeifrlmcucq1f2tblqc54g0aa6.apps.googleusercontent.com"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6756533343"
+      }
+    }
   }
 }

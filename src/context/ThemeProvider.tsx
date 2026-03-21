@@ -52,6 +52,7 @@ export type ThemeColors = {
   border: string;
   bottomButton: string;
   bottomButtonIcon: string;
+  shuffleBtn: string;
 };
 
 interface ThemeContextValue {
@@ -85,6 +86,7 @@ export const ThemeContext = createContext<ThemeContextValue>({
     border: "#E0E0E0",
     bottomButton: "#222222",
     bottomButtonIcon: "#ffffff",
+    shuffleBtn: "#ffffff",
   },
 });
 
@@ -102,6 +104,7 @@ const lightColors: ThemeColors = {
   border: "#E0E0E0",
   bottomButton: "#222222",
   bottomButtonIcon: "#ffffff",
+  shuffleBtn: "#ffffff",
 };
 
 const darkColors: ThemeColors = {
@@ -118,6 +121,7 @@ const darkColors: ThemeColors = {
   border: "#555555",
   bottomButton: "#ffffff",
   bottomButtonIcon: "#222222",
+  shuffleBtn: "#333333",
 };
 
 const defaultColors: ThemeColors = {
@@ -127,13 +131,14 @@ const defaultColors: ThemeColors = {
   subtitle: "#E6F6F7",
   accent: "#FFFFFF",
   circle: "#7FDDE0",
-  shapeRect: "#198686ff",
+  shapeRect: "#198686",
   textSecondary: "#E6F6F7",
   buttonText: "#00A2AA",
   overlay: "rgba(0,0,0,0.4)",
-  border: "rgba(255,255,255,0.35)",
+  border: "#59C5C7",
   bottomButton: "#FFFFFF",
   bottomButtonIcon: "#00A2AA",
+  shuffleBtn: "#34A4A8",
 };
 
 const CUSTOM_THEME_KEY = "@EvenApp:customTheme";
@@ -152,7 +157,12 @@ const THEME_COLOR_KEYS: Array<keyof ThemeColors> = [
   "border",
   "bottomButton",
   "bottomButtonIcon",
+  "shuffleBtn",
 ];
+
+const THEME_COLOR_DEFAULTS: Partial<ThemeColors> = {
+  shuffleBtn: "#ffffff",
+};
 
 function isValidThemeColors(value: unknown): value is ThemeColors {
   if (!value || typeof value !== "object") return false;
@@ -165,7 +175,10 @@ async function loadCustomTheme(): Promise<ThemeColors | null> {
     const stored = await AsyncStorage.getItem(CUSTOM_THEME_KEY);
     if (!stored) return null;
     const parsed = JSON.parse(stored) as unknown;
-    return isValidThemeColors(parsed) ? parsed : null;
+    if (!parsed || typeof parsed !== "object") return null;
+    // Migrate older stored themes by filling in defaults for new keys
+    const withDefaults = { ...THEME_COLOR_DEFAULTS, ...(parsed as object) } as unknown;
+    return isValidThemeColors(withDefaults) ? withDefaults : null;
   } catch {
     return null;
   }

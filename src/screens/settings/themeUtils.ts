@@ -37,6 +37,7 @@ export const themeToDraft = (theme: ThemeColors): CustomThemeDraft => ({
   border: theme.border,
   circle: theme.circle,
   shapeRect: theme.shapeRect,
+  shuffleBtn: theme.shuffleBtn,
 });
 
 export const buildCustomTheme = (base: CustomThemeDraft): ThemeColors => {
@@ -58,6 +59,7 @@ export const buildCustomTheme = (base: CustomThemeDraft): ThemeColors => {
     border: base.border,
     bottomButton: base.accent,
     bottomButtonIcon: contrastColor(base.accent),
+    shuffleBtn: base.shuffleBtn,
   };
 };
 
@@ -77,21 +79,31 @@ export const isThemePreset = (value: unknown): value is ThemePreset => {
   );
 };
 
+const THEME_COLOR_DEFAULTS: Partial<ThemeColors> = {
+  shuffleBtn: "#ffffff",
+};
+
 export const normalizeThemePresets = (value: unknown): ThemePreset[] => {
   if (!Array.isArray(value)) return [];
   const seen = new Set<string>();
   const normalized: ThemePreset[] = [];
   for (const entry of value) {
-    if (!isThemePreset(entry)) continue;
-    const id = entry.id.trim();
-    const name = entry.name.trim().slice(0, 40);
+    if (!entry || typeof entry !== "object") continue;
+    // Migrate older presets by filling in defaults for new color keys
+    const record = entry as Record<string, unknown>;
+    if (record.colors && typeof record.colors === "object") {
+      record.colors = { ...THEME_COLOR_DEFAULTS, ...(record.colors as object) };
+    }
+    if (!isThemePreset(record)) continue;
+    const id = record.id.trim();
+    const name = record.name.trim().slice(0, 40);
     if (!id || !name || seen.has(id)) continue;
     seen.add(id);
     normalized.push({
       id,
       name,
-      colors: entry.colors,
-      favorite: !!entry.favorite,
+      colors: record.colors,
+      favorite: !!record.favorite,
     });
     if (normalized.length >= MAX_THEME_PRESETS) break;
   }

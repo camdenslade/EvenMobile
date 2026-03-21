@@ -23,15 +23,15 @@ import { apiPost } from "../../../services/apiService";
 
 const ALLOWED_SCHOOL_DOMAINS = [
   "missouristate.edu",
-  "drury.edu",
-  "evangel.edu",
-  "otc.edu",
-  "mission.edu",
-  "sbuniv.edu",
+  // "drury.edu",     // fall release
+  // "evangel.edu",  // fall release
+  // "otc.edu",      // fall release
+  // "mission.edu",  // fall release
+  // "sbuniv.edu",   // fall release
 ];
 
 const LAUNCH_DISCLAIMER =
-  "Since the app is newly released, it is capped to students in Springfield, MO and the surrounding areas.";
+  "Since the app is newly released, it is currently limited to Missouri State University students. More schools coming fall 2026.";
 
 interface StepEmailGateProps {
   colors: any;
@@ -166,8 +166,7 @@ export function StepEmailGate({
           { color: colors.subtitle, marginBottom: 16 },
         ]}
       >
-        Access is limited to verified students. Use a .edu address from
-        Springfield, MO and nearby campuses.
+        Access is limited to verified Missouri State University students.
       </Text>
       <Text
         style={[

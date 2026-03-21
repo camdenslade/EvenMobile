@@ -9,7 +9,8 @@ import React, {
 import * as SecureStore from "expo-secure-store";
 import { jwtDecode } from "jwt-decode";
 import { closeSocket } from "../services/socket";
-import { clearAuthCaches } from "../services/apiService";
+import { clearAuthCaches, apiPost } from "../services/apiService";
+import { getPendingReceipt, clearPendingReceipt } from "../services/purchaseClient";
 
 type AuthUser = {
   uid: string;
@@ -206,6 +207,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setError(null);
       await saveTokens(tokens);
       clearAuthCaches();
+      // Verify any purchase receipt that was deferred because the user wasn't signed in
+      getPendingReceipt().then(async (pending) => {
+        if (!pending) return;
+        try {
+          await apiPost("/purchases/verify", { platform: pending.platform, receipt: pending.receipt }, tokens.accessToken);
+          await clearPendingReceipt();
+        } catch (err) {
+          console.warn("Failed to verify deferred purchase receipt:", err);
+        }
+      }).catch(() => {});
     },
     [clearTokens, saveTokens],
   );
@@ -374,7 +385,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     (async () => {
       const restored = await restoreTokens();
       if (restored?.accessToken) {
-        await setSession(restored);
+        let effectiveExpiresAt = restored.expiresAt;
+        if (effectiveExpiresAt == null) {
+          try {
+            const decoded = jwtDecode<{ exp?: number }>(restored.accessToken);
+            if (decoded.exp) effectiveExpiresAt = decoded.exp * 1000;
+          } catch {}
+        }
+        const isExpired =
+          effectiveExpiresAt != null && Date.now() >= effectiveExpiresAt - 30_000;
+        if (isExpired && restored.refreshToken) {
+          // Token is expired (or expiring in <30s) — refresh before exposing to the app
+          const clientId = CLIENT_ID;
+          if (clientId) {
+            try {
+              const body = new URLSearchParams({
+                grant_type: "refresh_token",
+                client_id: clientId,
+                refresh_token: restored.refreshToken,
+              }).toString();
+              const res = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body,
+              });
+              if (res.ok) {
+                const data = (await res.json()) as {
+                  access_token?: string;
+                  expires_in?: number;
+                  refresh_token?: string;
+                };
+                if (data?.access_token) {
+                  await setSession({
+                    accessToken: data.access_token,
+                    refreshToken: data.refresh_token || restored.refreshToken,
+                    expiresAt:
+                      typeof data.expires_in === "number"
+                        ? Date.now() + data.expires_in * 1000
+                        : undefined,
+                  });
+                  setLoading(false);
+                  return;
+                }
+              }
+            } catch (err) {
+              console.warn("Proactive refresh on restore failed", err);
+            }
+          }
+          // Refresh failed (network issue, etc.) — fall back to the stored session.
+          // apiService.ts will retry with a fresh refresh on the first 401.
+          await setSession(restored);
+        } else {
+          await setSession(restored);
+        }
       } else {
         setUser(null);
         setIdToken(null);

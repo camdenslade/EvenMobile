@@ -20,8 +20,8 @@ import {
 } from "../services/purchaseClient";
 import { useTheme } from "../context/ThemeProvider";
 
-const TERMS_URL = "https://evendating.com/terms";
-const PRIVACY_URL = "https://evendating.com/privacy";
+const TERMS_URL = "https://evendating.us/terms";
+const PRIVACY_URL = "https://evendating.us/privacy";
 
 interface PurchaseOptionsModalProps {
   visible: boolean;
@@ -93,10 +93,6 @@ export function PurchaseOptionsModal({
   const enabledPayments = paymentFlags?.enablePayments ?? true;
   const modalTitle =
     initialFeature === "subscription" ? "Odd Membership" : "";
-  const modalSubtitle =
-    initialFeature === "subscription"
-      ? "Unlock premium access across the app."
-      : "Pick a perk to keep things moving.";
   const options: Array<{
     feature: Feature;
     title: string;

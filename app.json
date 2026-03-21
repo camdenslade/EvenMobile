@@ -7,14 +7,15 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#222222"
+      "backgroundColor": "#00A2AA"
     },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
         "CFBundleName": "Even Dating",
+        "NSPhotoLibraryUsageDescription": "Even Dating accesses your photo library when you tap the '+' button on your profile to select photos. Your selected photos are displayed on your dating profile so other users can see them when swiping. You can add up to 6 photos.",
+        "NSLocationWhenInUseUsageDescription": "Even Dating accesses your location to calculate distances between you and other users. This distance appears on profile cards as 'X miles away' and helps filter matches within your preferred distance range (e.g., within 25 miles).",
         "SKAdNetworkItems": [
           {
             "SKAdNetworkIdentifier": "v9wttpbfk9.skadnetwork"
@@ -51,6 +52,18 @@
     "plugins": [
       "expo-web-browser",
       "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Even Dating accesses your photo library when you tap the '+' button on your profile to select photos. Your selected photos are displayed on your dating profile so other users can see them when swiping. You can add up to 6 photos."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Even Dating accesses your location to calculate distances between you and other users. This distance appears on profile cards as 'X miles away' and helps filter matches within your preferred distance range (e.g., within 25 miles)."
+        }
+      ],
       [
         "expo-build-properties",
         {

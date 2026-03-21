@@ -28,7 +28,7 @@ interface TutorialStep {
     borderRadius?: number;
   };
   pointerPosition?: 'top' | 'bottom' | 'left' | 'right';
-  action?: 'swipe-up' | 'swipe-down' | 'tap';
+  action?: 'swipe-up' | 'swipe-down' | 'swipe-left' | 'swipe-right' | 'tap';
 }
 
 interface TutorialOverlayProps {
@@ -133,7 +133,7 @@ export function TutorialOverlay({ visible, onComplete, onSkip }: TutorialOverlay
             borderRadius: sideButtonSize / 2,
           },
         pointerPosition: 'bottom',
-        action: 'swipe-down',
+        action: 'swipe-left',
       },
       {
         id: 'undo',
@@ -324,12 +324,20 @@ export function TutorialOverlay({ visible, onComplete, onSkip }: TutorialOverlay
               {step.action === 'swipe-down' && (
                 <Ionicons name="arrow-down" size={24} color={colors.accent} />
               )}
+              {step.action === 'swipe-left' && (
+                <Ionicons name="arrow-back" size={24} color={colors.accent} />
+              )}
+              {step.action === 'swipe-right' && (
+                <Ionicons name="arrow-forward" size={24} color={colors.accent} />
+              )}
               {step.action === 'tap' && (
                 <Ionicons name="hand-left" size={24} color={colors.accent} />
               )}
               <Text style={[styles.actionText, { color: colors.accent }]}>
                 {step.action === 'swipe-up' && 'Try swiping up!'}
                 {step.action === 'swipe-down' && 'Try swiping down!'}
+                {step.action === 'swipe-left' && 'Try swiping left!'}
+                {step.action === 'swipe-right' && 'Try swiping right!'}
                 {step.action === 'tap' && 'Try tapping!'}
               </Text>
             </View>

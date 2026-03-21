@@ -35,6 +35,7 @@ import { apiGet } from "../services/apiService";
 
 interface ProfileStatus {
   status: "missing" | "complete";
+  paused?: boolean;
 }
 
 interface UserSummary {

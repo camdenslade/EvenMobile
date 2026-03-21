@@ -140,6 +140,52 @@ export function useSwipeQueue() {
     [],
   );
 
+  // Fetch fresh queue in the background and prepend any newly-visible profiles
+  // (e.g. just-unpaused profiles) without disrupting the current view.
+  const backgroundRefreshQueue = useCallback(async () => {
+    const data = await apiGet<UserProfile[]>("/profiles/queue", idToken ?? undefined);
+    if (!data) return;
+
+    let list = data.map((p) => {
+      const photos = Array.isArray(p.photos)
+        ? p.photos.filter((ph) => typeof ph === "string" && ph.trim().length > 0)
+        : [];
+      const prefixed =
+        photos.length > 0 && p.profileImageUrl
+          ? [p.profileImageUrl, ...photos.filter((ph) => ph !== p.profileImageUrl)]
+          : photos.length > 0
+          ? photos
+          : p.profileImageUrl
+          ? [p.profileImageUrl]
+          : [];
+      return { ...p, photos: prefixed };
+    });
+    list = sanitizeList(list);
+    list = list.filter((p) => !seenIds.has(p.userUid));
+    if (blockedUids.size > 0) {
+      list = list.filter((p) => !blockedUids.has(p.userUid));
+    }
+    if (pendingSenderUids.size > 0) {
+      list = list.filter((p) => !pendingSenderUids.has(p.userUid));
+    }
+
+    // Find profiles from server that aren't already in the current visible queue
+    const currentUids = new Set(profilesRef.current.map((p) => p.userUid));
+    const newProfiles = list.filter((p) => !currentUids.has(p.userUid));
+    if (newProfiles.length === 0) return;
+
+    // Prepend newly-visible profiles (e.g. just-unpaused) to the current queue
+    const merged = sanitizeList([...newProfiles, ...profilesRef.current]);
+    preloadImages(newProfiles);
+    setQueue(merged);
+    profilesLengthRef.current = merged.length;
+    setProfiles(merged);
+    setState((prev) => ({
+      ...prev,
+      currentProfile: merged[0] ?? null,
+    }));
+  }, [blockedUids, idToken, setQueue, preloadImages, seenIds, pendingSenderUids, sanitizeList]);
+
   const loadQueue = useCallback(async () => {
     setState({ status: "LOADING", targetProfileId: "" } as LoadingState);
     undoStack.current = [];
@@ -217,11 +263,13 @@ export function useSwipeQueue() {
         currentProfile: filtered[0] ?? null,
       });
       preloadImages(filtered);
+      // Background refresh to pick up newly-unpaused profiles without disrupting the view
+      void backgroundRefreshQueue();
       return;
     }
 
     loadQueue();
-  }, [blockedUids, cachedQueue, loadQueue, pendingSenderUids, preloadImages, seenIds]);
+  }, [blockedUids, cachedQueue, loadQueue, backgroundRefreshQueue, pendingSenderUids, preloadImages, seenIds]);
 
   // Fetch pending message requests to exclude those senders from the queue
   useEffect(() => {

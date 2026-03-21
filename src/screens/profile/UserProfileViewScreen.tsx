@@ -143,6 +143,7 @@ export default function UserProfileViewScreen({
 
   const [profile, setProfile] = useState<ProfileView | null>(null);
   const [summary, setSummary] = useState<ReviewSummary | null>(null);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -610,13 +611,16 @@ export default function UserProfileViewScreen({
               <ScrollView
                 horizontal
                 pagingEnabled
-                showsHorizontalScrollIndicator={true}
+                showsHorizontalScrollIndicator={false}
                 style={styles.photoGallery}
                 contentContainerStyle={styles.photoGalleryContent}
-                snapToInterval={width * 0.95}
                 decelerationRate="fast"
                 accessible={false}
                 importantForAccessibility="no"
+                onMomentumScrollEnd={(e) => {
+                  const index = Math.round(e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width);
+                  setActivePhotoIndex(index);
+                }}
               >
                 {profile.photos.map((url, i) => (
                   <View 
@@ -645,9 +649,14 @@ export default function UserProfileViewScreen({
                   accessibilityRole="adjustable"
                 >
                   {profile.photos.map((_, i) => (
-                    <View 
-                      key={i} 
-                      style={[styles.photoDot, { backgroundColor: cardPalette.muted }]}
+                    <View
+                      key={i}
+                      style={[
+                        styles.photoDot,
+                        i === activePhotoIndex
+                          ? { backgroundColor: cardPalette.text, width: 10, height: 10, borderRadius: 5 }
+                          : { backgroundColor: cardPalette.muted },
+                      ]}
                       accessible={false}
                       importantForAccessibility="no"
                     />
@@ -1152,7 +1161,6 @@ const styles = StyleSheet.create({
   },
 
   photoGalleryContent: {
-    alignItems: "center",
   },
 
   photoSlide: {

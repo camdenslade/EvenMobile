@@ -38,7 +38,7 @@
 //
 //*******************************************************************
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { getSocket } from "../../services/socket";
 import {
   View,
@@ -50,6 +50,7 @@ import {
   RefreshControl,
   Alert,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 
@@ -64,6 +65,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useIsFocused } from "@react-navigation/native";
 import { useGlobalRefresh } from "../../context/RefreshContext";
 import { normalizePhotos } from "../../utils/photoUtils";
+import { isTablet, getResponsivePadding, MAX_CONTENT_WIDTH } from "../../utils/responsive";
 
 interface BackendMatch {
   matchId: string;
@@ -101,6 +103,22 @@ export default function MatchesScreen({ navigation, __prerender }: MatchesScreen
   const { colors } = useTheme();
   const { user, idToken } = useAuth();
   const { refresh, refreshing, registerRefresher } = useGlobalRefresh();
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Responsive grid layout
+  const tablet = isTablet();
+  const responsivePadding = getResponsivePadding();
+  const cardGap = 12;
+  const gridColumns = useMemo(() => {
+    if (!tablet) return 2;
+    const availableWidth = Math.min(screenWidth, MAX_CONTENT_WIDTH.wide) - responsivePadding * 2;
+    const minCardWidth = 160;
+    return Math.min(4, Math.max(2, Math.floor((availableWidth + cardGap) / (minCardWidth + cardGap))));
+  }, [tablet, screenWidth, responsivePadding]);
+  const cardWidth = useMemo(() => {
+    const availableWidth = Math.min(screenWidth, MAX_CONTENT_WIDTH.wide) - responsivePadding * 2;
+    return (availableWidth - cardGap * (gridColumns - 1)) / gridColumns;
+  }, [screenWidth, responsivePadding, gridColumns]);
 
   const cachedMatches = useAppCache((s) => s.matches);
   const cachedThreads = useAppCache((s) => s.messagesThreads);
@@ -649,7 +667,7 @@ export default function MatchesScreen({ navigation, __prerender }: MatchesScreen
         )}
 
         {!gridLoading && (
-          <View style={styles.matchesGrid}>
+          <View style={[styles.matchesGrid, tablet && { maxWidth: MAX_CONTENT_WIDTH.wide, alignSelf: 'center', paddingHorizontal: responsivePadding }]}>
             {messageRequests.map((request) => {
               const senderNameCard = request.sender?.firstName ?? "Unknown";
               const cachedMatchAge = cachedMatches?.find((m) => m.userUid === request.sender?.uid)?.profile?.age ?? null;
@@ -665,7 +683,7 @@ export default function MatchesScreen({ navigation, __prerender }: MatchesScreen
                   style={[
                     styles.matchCard,
                     styles.cardShadow,
-                    { backgroundColor: '#ffffff', borderColor: '#e0e0e0' },
+                    { backgroundColor: '#ffffff', borderColor: '#e0e0e0', width: cardWidth },
                   ]}
                   onPress={() => handleRequestPress(request)}
                   accessible={true}
@@ -714,7 +732,7 @@ export default function MatchesScreen({ navigation, __prerender }: MatchesScreen
                   style={[
                     styles.matchCard,
                     styles.cardShadow,
-                    { backgroundColor: '#ffffff', borderColor: '#e0e0e0' },
+                    { backgroundColor: '#ffffff', borderColor: '#e0e0e0', width: cardWidth },
                   ]}
                   onPress={() =>
                     navigation.navigate("UserProfileView", {
@@ -820,7 +838,6 @@ const styles = StyleSheet.create({
   },
 
   matchCard: {
-    width: "48%",
     height: 220,
     borderRadius: 12,
     overflow: "hidden",

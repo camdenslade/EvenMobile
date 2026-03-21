@@ -35,7 +35,7 @@
 //
 //*******************************************************************
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -48,6 +48,7 @@ import {
   Modal,
 } from "react-native";
 import { AppImage } from "../../components/AppImage";
+import * as Location from "expo-location";
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { apiGet } from "../../services/apiService";
@@ -58,6 +59,7 @@ import { useSessionData } from "../../context/SessionDataContext";
 import { PurchaseOptionsModal } from "../../components/PurchaseOptionsModal";
 import { InlineAlert } from "../../components/InlineAlert";
 import { normalizePhotos } from "../../utils/photoUtils";
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? "";
 
 interface SearchResult {
   userUid: string;
@@ -87,7 +89,14 @@ export default function SearchScreen({
   const { idToken } = useAuth();
   const { userSummary, paymentFlags, userFlags, refreshSessionData } = useSessionData();
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [deviceLocation, setDeviceLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  const isAuthenticated = !!idToken;
+
   const canUseSearch = () => {
+    // Unauthenticated users have already paid via Apple IAP (token gate is on login screen)
+    if (!isAuthenticated) return true;
+
     const pf = paymentFlags || {
       enablePayments: true,
       enableSearchTokens: true,
@@ -116,33 +125,17 @@ export default function SearchScreen({
   const [showExitModal, setShowExitModal] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  //********************************************************************
-  //
-  // handleSearch Function
-  //
-  // Performs name search via /search endpoint and loads rating summaries
-  // for each result. Clears previous results and errors before searching.
-  //
-  // Return Value
-  // ------------
-  // Promise<void>
-  //
-  // Value Parameters
-  // ----------------
-  // None
-  //
-  // Reference Parameters
-  // --------------------
-  // None
-  //
-  // Local Variables
-  // ---------------
-  // data       SearchResult[]|null        Response from /search endpoint
-  // summaries  Record<string,RatingSummary> Temporary ratings object
-  // r          SearchResult               Current result in loop
-  // summary    RatingSummary|null         Rating summary for result
-  //
-  //*******************************************************************
+  // Request location for unauthenticated searches
+  useEffect(() => {
+    if (isAuthenticated) return;
+    Location.requestForegroundPermissionsAsync().then(({ status }) => {
+      if (status !== "granted") return;
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).then((loc) => {
+        setDeviceLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+      }).catch(() => {});
+    }).catch(() => {});
+  }, [isAuthenticated]);
+
   async function handleSearch() {
     if (!canUseSearch()) {
       setShowPurchaseModal(true);
@@ -165,18 +158,29 @@ export default function SearchScreen({
       }
 
       try {
-        const data = await apiGet<SearchResult[]>(
-          `/search/name?name=${encodeURIComponent(trimmed)}`,
-          idToken ?? undefined,
-        );
+        let data: SearchResult[] | null = null;
+
+        if (!isAuthenticated) {
+          // Public endpoint — no auth, no token consumption
+          let url = `${API_BASE}/search/name/public?name=${encodeURIComponent(trimmed)}&radius=25`;
+          if (deviceLocation) {
+            url += `&lat=${deviceLocation.lat}&lng=${deviceLocation.lng}`;
+          }
+          const res = await fetch(url);
+          data = res.ok ? await res.json() : null;
+        } else {
+          data = await apiGet<SearchResult[]>(
+            `/search/name?name=${encodeURIComponent(trimmed)}`,
+            idToken,
+          );
+        }
 
         if (!data) {
           setError("Search failed.");
           setLoading(false);
-          // Still refresh session data - token may have been consumed
-          refreshSessionData().catch((err) => {
-            console.error("Failed to refresh session after search:", err);
-          });
+          if (isAuthenticated) {
+            refreshSessionData().catch(() => {});
+          }
           return;
         }
 
@@ -184,19 +188,16 @@ export default function SearchScreen({
         setLoading(false);
         setHasSearched(true);
 
-        // Refresh session data to update token count (non-blocking)
-        refreshSessionData().catch((err) => {
-          console.error("Failed to refresh session after search:", err);
-          // Search succeeded, just token count might be stale
-        });
+        if (isAuthenticated) {
+          refreshSessionData().catch(() => {});
+        }
       } catch (error) {
         console.error("Search API error:", error);
         setError("Search failed. Please try again.");
         setLoading(false);
-        // Still refresh session data - token may have been consumed
-        refreshSessionData().catch((err) => {
-          console.error("Failed to refresh session after search error:", err);
-        });
+        if (isAuthenticated) {
+          refreshSessionData().catch(() => {});
+        }
       }
     }, 250);
   }
@@ -391,7 +392,11 @@ export default function SearchScreen({
         userSummary={userSummary}
         paymentFlags={paymentFlags}
         onPurchased={async () => {
-          await refreshSessionData();
+          setShowPurchaseModal(false);
+          if (isAuthenticated) {
+            await refreshSessionData();
+          }
+          // Unauthenticated: canUseSearch() now returns true, just close the modal
         }}
       />
 
