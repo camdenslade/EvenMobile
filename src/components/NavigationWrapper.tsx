@@ -30,13 +30,15 @@
 //
 //*******************************************************************
 
-import { useState, useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { View, StyleSheet, AppState } from 'react-native';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { BottomNavBar } from './BottomNavBar';
 import { BottomButtons } from './BottomButtons';
 import { useBottomButtons } from '../context/BottomButtonsContext';
 import NotificationsSetup from './NotificationsSetup';
+import { useAuth } from '../context/AuthContext';
+import { apiPost } from '../services/apiService';
 
 interface NavigationWrapperProps {
   children: React.ReactNode;
@@ -106,15 +108,33 @@ function getActiveRouteName(state: any): string | undefined {
 // shouldShowBottomButtons boolean        Whether to show bottom buttons
 //
 //*******************************************************************
-function NavigationContentWithRoute({ 
-  children, 
-  routeName 
-}: { 
+function NavigationContentWithRoute({
+  children,
+  routeName
+}: {
   children: React.ReactNode;
   routeName?: string;
 }) {
   const navigation = useNavigation();
   const { buttonsState } = useBottomButtons();
+  const { idToken, user } = useAuth();
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Ping referral activity every 60s while app is foregrounded and authenticated
+  useEffect(() => {
+    if (!idToken || !user) return;
+
+    const ping = () => {
+      if (AppState.currentState === 'active') {
+        void apiPost('/referrals/ping', {}, idToken).catch(() => {});
+      }
+    };
+
+    pingIntervalRef.current = setInterval(ping, 60_000);
+    return () => {
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+    };
+  }, [idToken, user]);
 
   const getActiveTab = (): 'swipe' | 'matches' | 'messages' | 'profile' | null => {
     if (!routeName) return null;

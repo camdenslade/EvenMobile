@@ -19,13 +19,16 @@ import {
   ScrollView,
   Platform,
   Alert,
+  Modal,
+  TextInput,
 } from "react-native";
 import { RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import * as ImagePicker from "expo-image-picker";
 
 import { RootStackParamList } from "../../../App";
-import { apiGet } from "../../services/apiService";
+import { apiGet, apiPost } from "../../services/apiService";
 import { RatingGauge } from "./RatingGauge";
 import { useTheme } from "../../context/ThemeProvider";
 import GlobalBackground from "../../components/GlobalBackground";
@@ -144,6 +147,48 @@ export default function ReviewDetailScreen({
   const [loading, setLoading] = useState(!(cachedReceived || routeReceivedPrefill));
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
+
+  // Appeal state
+  const [appealVisible, setAppealVisible] = useState(false);
+  const [appealText, setAppealText] = useState("");
+  const [appealPhotos, setAppealPhotos] = useState<string[]>([]);
+  const [appealSubmitting, setAppealSubmitting] = useState(false);
+
+  const handlePickAppealPhoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setAppealPhotos((prev) => [...prev, result.assets[0].uri].slice(0, 3));
+    }
+  };
+
+  const handleSubmitAppeal = async () => {
+    if (!receivedReview?.id || !idToken) return;
+    if (appealText.trim().length < 10) {
+      Alert.alert("Error", "Please provide at least 10 characters explaining your appeal.");
+      return;
+    }
+    setAppealSubmitting(true);
+    try {
+      await apiPost(
+        `/reviews/${receivedReview.id}/appeal`,
+        { text: appealText.trim(), photoUrls: appealPhotos },
+        idToken
+      );
+      setAppealVisible(false);
+      setAppealText("");
+      setAppealPhotos([]);
+      Alert.alert("Appeal Submitted", "Your appeal has been submitted for admin review.");
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "Failed to submit appeal.";
+      Alert.alert("Error", msg);
+    } finally {
+      setAppealSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     if (!receivedReview && (cachedReceived || routeReceivedPrefill)) {
@@ -431,45 +476,155 @@ export default function ReviewDetailScreen({
         </Text>
 
         {hasReceived && (
-          <TouchableOpacity
-            style={[
-              styles.reportBtn,
-              {
-                borderColor: colors.accent,
-                backgroundColor:
-                  colors.background === "#222222"
-                    ? "rgba(255,255,255,0.08)"
-                    : colors.card,
-              },
-            ]}
-            accessible={true}
-            accessibilityLabel="Report review"
-            accessibilityRole="button"
-            accessibilityHint="Reports this review for inappropriate content"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            onPress={() =>
-              Alert.alert(
-                "Report Review",
-                "Reporting this review will send it to our moderation team.",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  { text: "Report", style: "destructive" },
-                ]
-              )
-            }
-          >
-            <Text
-              style={[styles.reportText, { color: colors.accent }]}
-              allowFontScaling={true}
-              accessible={false}
-              importantForAccessibility="no"
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[
+                styles.reportBtn,
+                {
+                  borderColor: "#d92d20",
+                  backgroundColor:
+                    colors.background === "#222222"
+                      ? "rgba(255,255,255,0.08)"
+                      : colors.card,
+                  flex: 1,
+                },
+              ]}
+              accessible={true}
+              accessibilityLabel="Report review"
+              accessibilityRole="button"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={() =>
+                Alert.alert(
+                  "Report Review",
+                  "Reporting this review will send it to our moderation team.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Report", style: "destructive" },
+                  ]
+                )
+              }
             >
-              Report Review
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[styles.reportText, { color: "#d92d20" }]}
+                allowFontScaling={true}
+                accessible={false}
+                importantForAccessibility="no"
+              >
+                Report
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.reportBtn,
+                {
+                  borderColor: colors.accent,
+                  backgroundColor:
+                    colors.background === "#222222"
+                      ? "rgba(255,255,255,0.08)"
+                      : colors.card,
+                  flex: 1,
+                },
+              ]}
+              accessible={true}
+              accessibilityLabel="Appeal review"
+              accessibilityRole="button"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={() => setAppealVisible(true)}
+            >
+              <Text
+                style={[styles.reportText, { color: colors.accent }]}
+                allowFontScaling={true}
+                accessible={false}
+                importantForAccessibility="no"
+              >
+                Appeal
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
       </ScrollView>
+
+      {/* Appeal Modal */}
+      <Modal
+        visible={appealVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setAppealVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Appeal Review</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.subtitle }]}>
+              Explain why this review should be reconsidered. Attach photos as evidence if helpful.
+            </Text>
+
+            <TextInput
+              value={appealText}
+              onChangeText={setAppealText}
+              placeholder="Describe your appeal (required)..."
+              placeholderTextColor={colors.subtitle}
+              multiline
+              numberOfLines={5}
+              style={[
+                styles.appealInput,
+                { color: colors.text, backgroundColor: colors.background, borderColor: colors.border },
+              ]}
+              accessibilityLabel="Appeal description"
+            />
+
+            <TouchableOpacity
+              style={[styles.photoBtn, { borderColor: colors.border }]}
+              onPress={handlePickAppealPhoto}
+              disabled={appealPhotos.length >= 3}
+              accessibilityRole="button"
+              accessibilityLabel="Add photo evidence"
+            >
+              <Ionicons name="camera-outline" size={20} color={colors.text} />
+              <Text style={[styles.photoBtnText, { color: colors.text }]}>
+                Add Photo ({appealPhotos.length}/3)
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.modalBtns}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { borderColor: colors.border }]}
+                onPress={() => {
+                  setAppealVisible(false);
+                  setAppealText("");
+                  setAppealPhotos([]);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel appeal"
+              >
+                <Text style={[styles.modalBtnText, { color: colors.subtitle }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalBtn,
+                  {
+                    backgroundColor: appealSubmitting ? colors.accent + "80" : colors.accent,
+                    borderColor: "transparent",
+                  },
+                ]}
+                onPress={handleSubmitAppeal}
+                disabled={appealSubmitting}
+                accessibilityRole="button"
+                accessibilityLabel="Submit appeal"
+              >
+                {appealSubmitting ? (
+                  <ActivityIndicator color={colors.buttonText ?? "#fff"} size="small" />
+                ) : (
+                  <Text style={[styles.modalBtnText, { color: colors.buttonText ?? "#fff" }]}>
+                    Submit
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -610,18 +765,82 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  reportBtn: {
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
     marginTop: 18,
+  },
+
+  reportBtn: {
     paddingVertical: 14,
     paddingHorizontal: 16,
-    alignSelf: "flex-start",
     minHeight: Platform.OS === "ios" ? 44 : 48,
     justifyContent: "center",
+    alignItems: "center",
     borderRadius: 14,
+    borderWidth: 1,
   },
 
   reportText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalCard: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    gap: 14,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  appealInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 15,
+    minHeight: 110,
+    textAlignVertical: "top",
+  },
+  photoBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignSelf: "flex-start",
+  },
+  photoBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  modalBtns: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  modalBtnText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

@@ -1628,6 +1628,46 @@ export default function SettingsScreen({
           </View>
         </Modal>
 
+        {/* REFERRALS */}
+        <TouchableOpacity
+          style={[
+            styles.feedbackBtn,
+            styles.surfaceShadow,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+          onPress={() => navigation.navigate("Referrals")}
+          accessible={true}
+          accessibilityLabel="Refer a Friend"
+          accessibilityRole="button"
+          accessibilityHint="Invite friends and earn tokens"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons
+            name="person-add-outline"
+            size={22}
+            color={colors.text}
+            style={{ marginRight: 12 }}
+            accessible={false}
+            importantForAccessibility="no"
+          />
+          <Text
+            style={[styles.feedbackText, { color: colors.text }]}
+            allowFontScaling={true}
+            accessible={false}
+            importantForAccessibility="no"
+          >
+            Refer a Friend
+          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={colors.subtitle}
+            style={{ marginLeft: "auto" }}
+            accessible={false}
+            importantForAccessibility="no"
+          />
+        </TouchableOpacity>
+
         {/* FEEDBACK & SUPPORT */}
         <Text
           style={[styles.sectionTitle, { color: colors.text }]}

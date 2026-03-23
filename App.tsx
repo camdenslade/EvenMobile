@@ -56,6 +56,7 @@ import ReviewsListScreen from "./src/screens/reviews/ReviewsListScreen";
 import ReviewWriteScreen from "./src/screens/reviews/ReviewWriteScreen";
 import ReviewDetailScreen from "./src/screens/reviews/ReviewDetailScreen";
 import BlockListScreen from "./src/screens/profile/BlockListScreen";
+import ReferralScreen from "./src/screens/ReferralScreen";
 
 import { ThemeProvider } from "./src/context/ThemeProvider";
 import { LocationProvider } from "./src/context/LocationProvider";
@@ -104,6 +105,7 @@ export type RootStackParamList = {
   Suggestions: undefined;
   Support: undefined;
   BlockList: undefined;
+  Referrals: undefined;
 
   ReviewsList: undefined;
   ReviewWrite: { targetId: string; forceReport?: boolean };
@@ -277,6 +279,7 @@ function AuthRouter() {
         <Stack.Screen name="Suggestions" component={SuggestionsScreen} />
         <Stack.Screen name="Support" component={SupportScreen} />
         <Stack.Screen name="BlockList" component={BlockListScreen} />
+        <Stack.Screen name="Referrals" component={ReferralScreen} />
         <Stack.Screen name="ReviewsList" component={ReviewsListScreen} />
         <Stack.Screen name="ReviewWrite" component={ReviewWriteScreen} />
         <Stack.Screen name="ReviewDetail" component={ReviewDetailScreen} />
@@ -320,6 +323,7 @@ function AuthRouter() {
       <Stack.Screen name="Suggestions" component={SuggestionsScreen} />
       <Stack.Screen name="Support" component={SupportScreen} />
       <Stack.Screen name="BlockList" component={BlockListScreen} />
+      <Stack.Screen name="Referrals" component={ReferralScreen} />
       <Stack.Screen name="ReviewsList" component={ReviewsListScreen} />
       <Stack.Screen name="ReviewWrite" component={ReviewWriteScreen} />
       <Stack.Screen name="ReviewDetail" component={ReviewDetailScreen} />
