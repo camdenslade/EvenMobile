@@ -104,9 +104,6 @@ async function postJson<T>(path: string, body: any): Promise<T> {
   });
 
   const text = await res.text();
-  if (__DEV__) {
-    console.log("[auth] postJson", { url, status: res.status, text });
-  }
   const parsed = text ? (JSON.parse(text) as T & { message?: string }) : null;
 
   if (!res.ok) {
