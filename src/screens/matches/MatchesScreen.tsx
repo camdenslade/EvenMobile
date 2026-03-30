@@ -81,6 +81,14 @@ interface BackendMatch {
   firstMessageAt?: string | null;
 }
 
+function daysUntilExpiry(match: BackendMatch): number | null {
+  if (match.firstMessageAt) return null;
+  const base = new Date(match.lastActivityAt || match.createdAt);
+  if (isNaN(base.getTime())) return null;
+  const expiry = new Date(base.getTime() + 14 * 24 * 60 * 60 * 1000);
+  return Math.max(0, Math.floor((expiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+}
+
 interface MessageRequest {
   id: string;
   content: string;
@@ -726,6 +734,7 @@ export default function MatchesScreen({ navigation, __prerender }: MatchesScreen
               const matchName = m.profile?.name ?? "Unknown";
               const matchAge = m.profile?.age;
               const matchDisplayName = matchAge ? `${matchName} • ${matchAge}` : matchName;
+              const days = daysUntilExpiry(m);
               return (
                 <TouchableOpacity
                   key={m.matchId}
@@ -755,6 +764,13 @@ export default function MatchesScreen({ navigation, __prerender }: MatchesScreen
                       accessibilityRole="image"
                       priority="normal"
                     />
+                    {days !== null && days <= 7 && (
+                      <View style={styles.expiryPill}>
+                        <Text style={styles.expiryPillText}>
+                          {days === 0 ? "Expiring today" : `${days}d left`}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                   <View style={[styles.matchCardFooter, { backgroundColor: '#ffffff' }]}>
                     <Text
@@ -880,6 +896,21 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     tintColor: "#ffffff",
+  },
+
+  expiryPill: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  expiryPillText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "600",
   },
 
   matchCardFooter: {

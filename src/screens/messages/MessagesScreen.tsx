@@ -518,6 +518,11 @@ export default function MessagesScreen({
               accessible={false}
               importantForAccessibility="no"
             >
+              {item.status === "restored" && (
+                <Text style={[styles.reconnectedBadge, { backgroundColor: colors.accent, color: colors.buttonText }]}>
+                  Reconnected
+                </Text>
+              )}
               <Text
                 style={[styles.name, { color: '#000000' }]}
                 allowFontScaling={true}
