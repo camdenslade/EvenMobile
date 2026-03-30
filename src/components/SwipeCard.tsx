@@ -73,14 +73,18 @@ export const SwipeCard = memo(function SwipeCard({ profile, onPressProfile }: Pr
     () => buildCardPalette(colors.background),
     [colors.background],
   );
+  const isMissouriState =
+    profile.school?.toLowerCase().includes("missouri state") ?? false;
   const baseSchoolColor =
     (colors.accent as string | undefined) ||
     (isDarkBackground ? "#8aa0ff" : "#2d4cff");
-  const schoolColor = ensureContrastingColor(
-    baseSchoolColor,
-    cardPalette.surface,
-    cardPalette.text,
-  );
+  const schoolColor = isMissouriState
+    ? "#5D001E"
+    : ensureContrastingColor(
+        baseSchoolColor,
+        cardPalette.surface,
+        cardPalette.text,
+      );
 
   // Normalize photos using centralized utility (prevents divergence with ProfileScreen)
   const photos = useMemo(() => {
@@ -312,20 +316,20 @@ export const SwipeCard = memo(function SwipeCard({ profile, onPressProfile }: Pr
             style={[
               styles.schoolCard,
               {
-                backgroundColor: schoolColor + "1A",
-                borderColor: schoolColor,
+                backgroundColor: isMissouriState ? "#5D001E" : schoolColor + "1A",
+                borderColor: isMissouriState ? "#5D001E" : schoolColor,
               },
             ]}
             accessible={true}
             accessibilityRole="text"
             accessibilityLabel={`School: ${profile.school}${profile.major ? `, ${profile.major}` : ""}${profile.gradYear ? `, class of ${profile.gradYear}` : ""}`}
           >
-            <Text style={[styles.schoolName, { color: schoolColor }]} numberOfLines={1}>
+            <Text style={[styles.schoolName, { color: isMissouriState ? "#FFFFFF" : schoolColor }]} numberOfLines={1}>
               {profile.school}
             </Text>
             {(profile.major || profile.gradYear) && (
               <Text
-                style={[styles.schoolSub, { color: cardPalette.subtitle }]}
+                style={[styles.schoolSub, { color: isMissouriState ? "rgba(255,255,255,0.75)" : cardPalette.subtitle }]}
                 numberOfLines={1}
               >
                 {[profile.major, profile.gradYear ? `Class of ${profile.gradYear}` : null]

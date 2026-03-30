@@ -133,12 +133,16 @@ export default function UserProfileViewScreen({
     () => buildCardPalette(colors.background),
     [colors.background],
   );
-  const schoolColor = ensureContrastingColor(
-    (colors.accent as string | undefined) ||
-      (isDarkBackground ? "#8aa0ff" : "#2d4cff"),
-    cardPalette.surface,
-    cardPalette.text,
-  );
+  const isMissouriState =
+    profile?.school?.toLowerCase().includes("missouri state") ?? false;
+  const schoolColor = isMissouriState
+    ? "#5D001E"
+    : ensureContrastingColor(
+        (colors.accent as string | undefined) ||
+          (isDarkBackground ? "#8aa0ff" : "#2d4cff"),
+        cardPalette.surface,
+        cardPalette.text,
+      );
   const backArrowColor = isDarkColor(colors.background) ? "#FFFFFF" : "#111111";
 
   const [profile, setProfile] = useState<ProfileView | null>(null);
@@ -676,20 +680,20 @@ export default function UserProfileViewScreen({
               style={[
                 styles.schoolCard,
                 {
-                  backgroundColor: schoolColor + "1A",
-                    borderColor: schoolColor,
+                  backgroundColor: isMissouriState ? "#5D001E" : schoolColor + "1A",
+                    borderColor: isMissouriState ? "#5D001E" : schoolColor,
                   },
                 ]}
                 accessible={true}
                 accessibilityRole="text"
                 accessibilityLabel={`School: ${profile.school}${profile.major ? `, ${profile.major}` : ""}${profile.gradYear ? `, class of ${profile.gradYear}` : ""}`}
               >
-                <Text style={[styles.schoolName, { color: schoolColor }]} allowFontScaling={true} numberOfLines={1}>
+                <Text style={[styles.schoolName, { color: isMissouriState ? "#FFFFFF" : schoolColor }]} allowFontScaling={true} numberOfLines={1}>
                   {profile.school}
                 </Text>
                 {(profile.major || profile.gradYear) && (
                   <Text
-                    style={[styles.schoolSub, { color: cardPalette.subtitle }]}
+                    style={[styles.schoolSub, { color: isMissouriState ? "rgba(255,255,255,0.75)" : cardPalette.subtitle }]}
                     allowFontScaling={true}
                     numberOfLines={1}
                   >
